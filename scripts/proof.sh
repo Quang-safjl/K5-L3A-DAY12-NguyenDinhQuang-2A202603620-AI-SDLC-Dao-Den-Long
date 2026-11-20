@@ -9,7 +9,7 @@ mkdir -p "$OUT/runs"
 
 {
   echo "# Kết quả kiểm chứng $PHASE"
-  echo "commit: $(git rev-parse --short HEAD 2>/dev/null || echo 'chưa commit')"
+  echo "code commit (lần sửa cuối của src, headless.js, contract, tests): $(git log -1 --format=%h -- src headless.js game.contract.json tests 2>/dev/null)"
   echo "node: $(node --version) · $(uname -sm)"
   echo
   echo "## 1. Unit + scenario test (node --test)"

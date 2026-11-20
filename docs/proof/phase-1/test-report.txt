@@ -1,0 +1,48 @@
+# Kết quả kiểm chứng phase-1
+code commit (lần sửa cuối của src, headless.js, contract, tests): 934869a
+node: v22.23.5 · Linux x86_64
+
+## 1. Unit + scenario test (node --test)
+ok 1 - R-01 contract: snapshot tick 0 đầu tiên, end cuối, đúng số tick, snapshot mỗi 10 tick
+ok 2 - R-01 --snapshot-every tùy chỉnh và time_left_s = thời lượng - bước/60
+ok 3 - R-02 di chuyển: player_speed m/s theo hướng camera, vector dài được chuẩn hóa
+ok 4 - R-02 frame chỉ đổi trường có mặt; trường vắng giữ giá trị cũ
+ok 5 - R-03 nhặt đom đóm trong pickup_radius, không nhặt ngoài bán kính
+ok 6 - R-03 không mang quá carry_capacity
+ok 7 - R-04 nạp đèn: deposit từng phần rồi lantern_lit khi đủ lantern_cost
+ok 8 - R-04 interact chỉ kích hoạt khi false→true; ngoài interact_radius thì không nạp
+ok 9 - R-05 tỏa sáng: tốn pulse_cost, làm choáng + đẩy Bóng Mực trong pulse_radius
+ok 10 - R-05 không đủ ánh sáng thì không tỏa sáng; có cooldown
+ok 11 - R-05 hết choáng sau pulse_stun_s thì đuổi tiếp
+ok 12 - R-06 Bóng Mực chạm → mất lửa, rơi đom đóm theo hit_drop_ratio, bất tử invuln_s
+ok 13 - R-07 thua khi hết lửa (no_flames), mô phỏng dừng sớm
+ok 14 - R-07 thua khi trời sáng (dawn)
+ok 15 - R-07 thắng khi thắp đủ 5 đèn (all_lit) + điểm thưởng thời gian/lửa
+ok 16 - R-08 Bóng Mực không vào safe_radius của đèn đã thắp
+ok 17 - R-09 dựng scenario không phát sự kiện, không cộng điểm
+ok 18 - R-10 tính tất định: cùng seed → output giống hệt; khác seed → khác
+ok 19 - R-11 inputs/scenario sai định dạng → mã thoát 2, lỗi ra stderr
+ok 20 - R-12 tọa độ làm tròn 3 chữ số thập phân
+# tests 20
+# pass 20
+# fail 0
+
+## 2. Tính tất định (seed 42, 3000 tick, chạy 2 lần)
+cf3443e4313ea98d45fd34f6079eb0114aa1b829210a004729ab799973271715  docs/proof/phase-1/runs/det-a.jsonl
+cf3443e4313ea98d45fd34f6079eb0114aa1b829210a004729ab799973271715  docs/proof/phase-1/runs/det-b.jsonl
+KẾT QUẢ: giống hệt ✅
+
+## 3. Chơi trọn Đêm 1 bằng bot (inputs → headless.js)
+seed=1 bot kết thúc: state=won ticks=2608 score=1296 → scenarios/autoplay-seed1.inputs.json
+seed 1 headless end: {"type":"end","ticks":2608,"state":"won","score":1296}
+  sự kiện lantern_lit: 5, game_over: {"type":"event","tick":2608,"name":"game_over","data":{"result":"won","reason":"all_lit"}}
+seed=42 bot kết thúc: state=won ticks=2158 score=1204 → scenarios/autoplay-seed42.inputs.json
+seed 42 headless end: {"type":"end","ticks":2158,"state":"won","score":1204}
+  sự kiện lantern_lit: 5, game_over: {"type":"event","tick":2158,"name":"game_over","data":{"result":"won","reason":"all_lit"}}
+
+## 4. Đứng yên không làm gì (phải thua)
+end: {"type":"end","ticks":626,"state":"lost","score":0}
+game_over: {"type":"event","tick":626,"name":"game_over","data":{"result":"lost","reason":"no_flames"}}
+
+## 5. Hiệu năng headless (một đêm đầy đủ 18000 tick, không Bóng Mực để chạy hết đêm)
+18000 tick (5 phút game) chạy trong 141 ms; dòng output: 1803
