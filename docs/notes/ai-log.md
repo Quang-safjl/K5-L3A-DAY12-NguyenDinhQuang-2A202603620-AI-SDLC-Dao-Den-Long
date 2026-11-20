@@ -17,3 +17,20 @@ Công cụ: Claude (claude.ai, có tool chạy code), model Claude Opus. Harness
 4. `node --test tests/` không chạy trên Node 22 (coi `tests/` là module) → đổi script thành `node --test`.
 
 **Token / chi phí ước tính:** khoảng 150–200k token (đọc tài liệu và lab board qua ảnh chụp chiếm phần lớn). Cách tiết kiệm: đọc đề một lần rồi chép phần bắt buộc vào `docs/notes/phase-1.md` để các lần sau không phải đọc lại; AGENTS.md ngắn; test chạy CLI thật nên không cần agent "chạy thử" bằng tay nhiều lần.
+
+## Phase 2
+| Việc | Cách làm | Ghi chú |
+|---|---|---|
+| Đọc ticket | Ảnh chụp toàn trang lab board → cắt thành 13 dải, phóng to để đọc chính xác từng con số | Chép phần bắt buộc vào `docs/notes/phase-2.md` |
+| Thiết kế | Tách `src/maps.js` (địa hình, `ground(x,z)`), viết lại `sim.js` theo đúng 12 bước/tick | |
+| Kiểm chứng trước UI | 23 test P2 + chạy lại 20 test Phase 1 với số chuẩn | 3 test Phase 1 sửa kỳ vọng có lý do |
+| UI | Viết `game3d.js` mới + `audio.js` (WebAudio tổng hợp), rồi tự kiểm bằng Chrome headless + three.js giả | |
+
+**Lỗi AI đã gặp và cách phát hiện**
+1. Nút "Tiếp tục" trong menu tạm dừng không hoạt động: vòng lặp đặt `acc = 0` khi dừng nên không bao giờ đọc lệnh tiếp tục; sau đó lại thiếu cạnh false→true của `pause`. Phát hiện bằng `scripts/ui_smoke.py` (sim_tick không tăng sau khi bấm Tiếp tục). Sửa: xử lý resume riêng, gửi 1 bước pause=false rồi pause=true. Ghi vào AGENTS.md.
+2. Nhấn phím nhanh (E) bị mất vì keydown+keyup xảy ra giữa hai tick → thêm tập `tapped`. Phát hiện bằng UI smoke (nhấn E cạnh đèn không nạp).
+3. Bản giả three.js thiếu `Vector3` do regex `[A-Za-z]` bỏ sót chữ số — lỗi của công cụ kiểm thử, không phải game; sửa regex.
+4. Test do AI viết sai thời điểm (recoil đo ở tick 60 thay vì 61, Gió Lạc cần > 260 tick, cooldown Tỏa Sáng làm Bóng quay lại) → đọc output thật rồi sửa test, không sửa game.
+5. Bot đi qua cầu dao động quanh điểm vào cầu và bước khỏi cầu khi đã ở nửa đảo B → sửa bot (không sửa luật).
+
+**Token / chi phí ước tính Phase 2:** khoảng 250–300k token (đọc ảnh ticket ~40k, viết sim/test ~100k, UI + kiểm thử ~100k). Tiết kiệm: đọc ảnh ticket một lần rồi chép ra file; test chạy CLI thật nên không phải đoán; dừng cải thiện bot sau 2 lần thử và ghi trung thực thay vì đốt thêm token.
