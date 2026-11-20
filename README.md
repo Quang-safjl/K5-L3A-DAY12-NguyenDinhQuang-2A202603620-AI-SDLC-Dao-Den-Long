@@ -1,6 +1,6 @@
 # Đảo Đèn Lồng — v1.0.0
 
-> 🎬 **Video demo:** _(chưa có — sẽ đính kèm Release [v1.0.0](../../releases/tag/v1.0.0) hoặc `docs/demo/demo.mp4`)_
+> 🎬 **Video demo:** [demo.mp4](https://github.com/Quang-safjl/K5-L3A-DAY12-NguyenDinhQuang-2A202603620-AI-SDLC-Dao-Den-Long/releases/download/v1.0.0/demo.mp4)
 > Nguyễn Đình Quang · 2A202603620 · K5-L3A · Day 12 AI SDLC · Đề bài gốc: [docs/lab/](docs/lab/README.md)
 
 Game 3D góc nhìn thứ ba chạy trên trình duyệt: **Mây**, người giữ đèn nhỏ tuổi, gom đom đóm để thắp và **giữ sáng** các Đèn Lồng Lớn trên ba hòn đảo cho tới bình minh, né Bóng Mực trong sương đen. Có chế độ headless tất định theo Test Contract v1.3 (dùng để chấm tự động), benchmark, soak test và bảng xếp hạng cục bộ.
