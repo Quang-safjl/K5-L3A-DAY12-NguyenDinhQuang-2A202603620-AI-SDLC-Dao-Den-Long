@@ -5,6 +5,6 @@ description: Chạy toàn bộ kiểm chứng của một phase (test, tất đ�
 
 1. `npm test` — nếu có `not ok`, dừng lại và sửa; không sửa test cho đạt.
 2. `bash scripts/proof.sh phase-N` — sinh `docs/proof/phase-N/test-report.txt` và `runs/*.jsonl`.
-3. Đọc report: phải thấy `# fail 0`, "giống hệt ✅", bot `state":"won"`, đứng yên thì `lost`.
+3. Đọc report: phải thấy `# fail 0`, "giống hệt ✅" cho cả 3 đêm, bot không-kẻ-địch thắp được đèn, đứng yên thì `lost`, hiệu năng mỗi đêm < 30 s, UI smoke toàn PASS (nếu có Chrome: `CHROME=... bash scripts/proof.sh phase-N`).
 4. Cập nhật bảng truy vết `docs/proof/phase-N/README.md`: mỗi yêu cầu R-xx → test/scenario → kết quả. Chưa đạt thì ghi "chưa đạt" + lý do.
 5. Báo lại cho người dùng số liệu thật từ report (không tóm tắt "chắc là chạy").
