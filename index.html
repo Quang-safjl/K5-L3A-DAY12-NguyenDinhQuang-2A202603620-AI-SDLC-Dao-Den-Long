@@ -5,25 +5,95 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Đảo Đèn Lồng</title>
   <style>
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0820; font-family: system-ui, sans-serif; color: #fde7c2; }
-    #hud { position: fixed; top: 12px; left: 12px; background: rgba(15,10,35,.7); padding: 10px 14px; border-radius: 10px; line-height: 1.6; font-size: 15px; min-width: 200px; }
-    #hud b { color: #ffb347; }
-    #help { position: fixed; bottom: 12px; left: 12px; font-size: 13px; opacity: .8; background: rgba(15,10,35,.6); padding: 6px 10px; border-radius: 8px; }
-    #toast { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); font-size: 18px; color: #ffd27a; text-shadow: 0 0 8px #ff9a2e; transition: opacity .4s; opacity: 0; }
-    #over { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(8,5,25,.75); font-size: 22px; text-align: center; }
-    #over h1 { font-size: 46px; margin: 0 0 10px; color: #ffb347; }
-    #err { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+    :root { --ui: #F5F1E6; --gold: #F2C14E; --danger: #FF5A5F; --lit: #FFB347; --mote: #FFE58A; --panel: rgba(14,20,48,.82); }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #0E1430; font-family: system-ui, "Segoe UI", sans-serif; color: var(--ui); user-select: none; }
+    canvas { display: block; }
+    .hud { position: fixed; pointer-events: none; font-weight: 600; text-shadow: 0 1px 3px #000; }
+    #hudFlames { top: 14px; left: 16px; font-size: 26px; letter-spacing: 4px; }
+    #hudClock { top: 10px; left: 50%; transform: translateX(-50%); font-size: 30px; font-variant-numeric: tabular-nums; }
+    #hudClock.warn { color: var(--danger); animation: blink .6s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: .25; } }
+    #hudRight { top: 12px; right: 16px; text-align: right; font-size: 18px; line-height: 1.5; }
+    #hudRight .score { color: var(--gold); font-size: 22px; }
+    #hudBar { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }
+    #hudBar i { width: 22px; height: 22px; border-radius: 5px; border: 2px solid var(--gold); background: rgba(0,0,0,.35); }
+    #hudBar i.on { background: var(--mote); box-shadow: 0 0 8px var(--mote); }
+    #hudCd { bottom: 16px; right: 16px; display: flex; gap: 10px; }
+    .cd { width: 54px; height: 54px; border-radius: 50%; border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 12px; text-align: center; background: rgba(0,0,0,.4); position: relative; overflow: hidden; }
+    .cd .fill { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,90,95,.55); }
+    .cd span { position: relative; }
+    #hudPrompt { bottom: 70px; left: 50%; transform: translateX(-50%); font-size: 20px; color: var(--lit); display: none; }
+    #hudInfo { top: 56px; left: 50%; transform: translateX(-50%); font-size: 16px; color: var(--gold); }
+    #hudArrow { width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 28px solid var(--lit); display: none; filter: drop-shadow(0 0 6px #000); }
+    #fps { bottom: 4px; left: 6px; font-size: 11px; opacity: .6; font-weight: 400; }
+    #help { bottom: 22px; left: 16px; font-size: 12px; opacity: .75; font-weight: 400; max-width: 300px; }
+    .screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(14,20,48,.78); text-align: center; gap: 12px; }
+    .screen.show { display: flex; }
+    .screen h1 { font-size: 52px; margin: 0; color: var(--lit); text-shadow: 0 0 18px rgba(255,179,71,.6); }
+    .screen h2 { font-size: 30px; margin: 0; color: var(--gold); }
+    .screen p { max-width: 560px; font-size: 18px; line-height: 1.5; margin: 4px; }
+    button { font: inherit; font-size: 18px; padding: 10px 26px; min-width: 220px; border-radius: 10px; border: 2px solid var(--gold); background: #1B2350; color: var(--ui); cursor: pointer; }
+    button:hover { background: #2a3570; }
+    label { font-size: 17px; display: flex; gap: 12px; align-items: center; }
+    #err { display: none; }
   </style>
   <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
   </script>
 </head>
 <body>
-  <div id="hud"></div>
-  <div id="toast"></div>
-  <div id="help">WASD: đi · Chuột kéo / ←→: xoay camera · Space: nhảy · E: nạp đèn · F: tỏa sáng · R: chơi lại</div>
-  <div id="over"><h1 id="overTitle"></h1><div id="overText"></div><p>Nhấn <b>R</b> để chơi lại</p></div>
-  <div id="err">Không tải được game. Hãy chạy: <code>node serve.js</code> rồi mở http://localhost:8000 (cần Internet để tải Three.js).</div>
+  <div id="hudFlames" class="hud"></div>
+  <div id="hudClock" class="hud"></div>
+  <div id="hudRight" class="hud"></div>
+  <div id="hudInfo" class="hud"></div>
+  <div id="hudBar" class="hud"></div>
+  <div id="hudCd" class="hud">
+    <div class="cd" id="cdDash"><div class="fill"></div><span>Lướt<br>Shift</span></div>
+    <div class="cd" id="cdPulse"><div class="fill"></div><span>Tỏa<br>F</span></div>
+  </div>
+  <div id="hudPrompt" class="hud"></div>
+  <div id="hudArrow" class="hud"></div>
+  <div id="help" class="hud">WASD đi · kéo chuột/←→ xoay · Space nhảy · Shift lướt · E nạp đèn · F tỏa sáng · Esc/P tạm dừng</div>
+  <div id="fps" class="hud"></div>
+
+  <div id="scrMenu" class="screen show">
+    <h1>Đảo Đèn Lồng</h1>
+    <p>Giúp Mây gom đom đóm, thắp lại các Đèn Lồng Lớn trên ba hòn đảo trước bình minh.</p>
+    <button data-act="start">Bắt đầu</button>
+    <button data-act="settings">Cài đặt</button>
+  </div>
+  <div id="scrIntro" class="screen">
+    <h2 id="introTitle"></h2>
+    <p id="introText"></p>
+    <button data-act="play">Vào đêm (Enter)</button>
+  </div>
+  <div id="scrResult" class="screen">
+    <h1 id="resTitle"></h1>
+    <p id="resText"></p>
+    <button id="resNext" data-act="next">Đêm kế tiếp</button>
+    <button data-act="retry">Chơi lại Đêm</button>
+    <button data-act="menu">Về menu</button>
+  </div>
+  <div id="scrDawn" class="screen">
+    <h1>Bình Minh</h1>
+    <p>Ba hòn đảo đã sáng trở lại. Ông Đăng mỉm cười: "Cháu giỏi lắm, Mây."</p>
+    <h2 id="dawnScore"></h2>
+    <button data-act="menu">Về menu</button>
+  </div>
+  <div id="scrPause" class="screen">
+    <h2>Tạm dừng</h2>
+    <button data-act="resume">Tiếp tục</button>
+    <button data-act="retry">Chơi lại Đêm</button>
+    <button data-act="settings">Cài đặt</button>
+    <button data-act="menu">Về menu</button>
+  </div>
+  <div id="scrSettings" class="screen">
+    <h2>Cài đặt</h2>
+    <label>Âm lượng <input id="setVol" type="range" min="0" max="1" step="0.05" /></label>
+    <label>Độ nhạy chuột <input id="setSens" type="range" min="0.05" max="1" step="0.05" /></label>
+    <button data-act="settingsBack">Xong</button>
+  </div>
+  <div id="err" class="screen"><p>Không tải được game. Hãy chạy <code>node serve.js</code> rồi mở http://localhost:8000 (cần Internet để tải Three.js).</p></div>
   <script type="module" src="./src/game3d.js"></script>
 </body>
 </html>
