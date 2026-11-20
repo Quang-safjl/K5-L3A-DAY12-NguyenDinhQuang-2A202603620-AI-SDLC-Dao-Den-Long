@@ -6,10 +6,10 @@
 
 Game 3D góc nhìn thứ ba: Mây, người giữ đèn nhỏ tuổi, gom đom đóm để thắp lại 5 Đèn Lồng Lớn và né Bóng Mực trong sương đen.
 
-## Cài đặt và chạy (Node >= 18, Python 3, trình duyệt có Internet để tải Three.js)
+## Cài đặt và chạy (Node >= 18, trình duyệt có Internet để tải Three.js)
 ```bash
 git clone <repo> && cd <repo>
-python3 -m http.server 8000      # rồi mở http://localhost:8000
+node serve.js                    # rồi mở http://localhost:8000
 ```
 Không cần `npm install` (không có dependency).
 

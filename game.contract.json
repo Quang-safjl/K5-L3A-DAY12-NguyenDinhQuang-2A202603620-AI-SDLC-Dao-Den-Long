@@ -2,7 +2,7 @@
   "contract_version": "1.0",
   "team": "2A202603620-nguyen-dinh-quang",
   "build_cmd": "node --version",
-  "run_cmd": "python3 -m http.server 8000  # rồi mở http://localhost:8000",
+  "run_cmd": "node serve.js 8000  # rồi mở http://localhost:8000",
   "headless_cmd": "node headless.js",
   "tuning": {
     "player_speed": 6,

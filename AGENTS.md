@@ -6,7 +6,7 @@ Game 3D (Three.js) + chế độ headless theo **Test Contract v1.0**. JavaScrip
 - Test: `npm test` (= `node --test`). Phải xanh trước khi kết thúc bất kỳ việc nào.
 - Bằng chứng: `bash scripts/proof.sh phase-N` → `docs/proof/phase-N/test-report.txt`
 - Headless: `node headless.js --seed 1 --night 1 [--scenario f] [--inputs f] --ticks N --out o.jsonl`
-- Chơi: `python3 -m http.server 8000` rồi mở http://localhost:8000
+- Chơi: `node serve.js` rồi mở http://localhost:8000 (không dùng python http.server: trên Windows trả .js sai MIME → trang đen)
 
 ## Kiến trúc
 - `src/sim.js`: TOÀN BỘ luật chơi, thuần, tất định. Không dùng `Math.random`, `Date`, DOM.
