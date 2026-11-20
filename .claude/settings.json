@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash scripts/hooks/stop-if-tests-red.sh" }
+        ]
+      }
+    ]
+  }
+}
