@@ -1,10 +1,33 @@
 # Changelog
 
-## [Unreleased] — Nâng cấp giao diện + Chọn màn (ngoài ticket, không đổi luật)
+## [1.0.0] — phase-4 · Ticket-04 "Bình minh: phát hành v1.0.0" · Test Contract v1.3
+
+Không đổi luật, số liệu tuning hay output headless (test P4-01 so tuning với tag phase-3; P4-02 so output headless 3 Đêm từng byte với bằng chứng Phase 3).
+
+### ⚠ Breaking changes
+- `contract_version` **1.2 → 1.3**; thêm `bench_cmd` (`node bench.js`) và `soak_cmd` (`node soak.js`).
+- `run_cmd` **`node serve.js 8000  # rồi mở …` → `node serve.js`** (comment `#` nuốt mất tham số `--export-leaderboard` khi chạy qua shell). Cổng mặc định vẫn 8000.
+- `index.html` nạp three.js từ `vendor/` thay vì CDN unpkg.
+
+### Added
+- **Benchmark** `node bench.js --seed 42 --duration 30 --out bench.json`: mở Chrome/Edge/Chromium 1280×720 (không toàn màn hình, vsync tắt bằng cờ), cảnh chuẩn Đêm 1 với 200 Bóng Mực wander + 100 đom đóm, L1–L3 fuel 100, camera bay vòng R 30 Y 15 15 s/vòng, 3 s khởi động, ghi `avg_fps, p1_low_fps, frame_ms_p95, frames, load_ms, peak_mem_mb, vsync_off, renderer, os`.
+- `sim.js`: cờ `g.bench` (mặc định false) tắt sinh thêm, sát thương, nhặt, hao dầu, kết thúc Đêm, Bóng nhận Mây làm mục tiêu. `src/bench.js`: dựng cảnh, đường bay camera, công thức số đo.
+- **Soak** `node soak.js --seed 7 --nights 10 --out soak.json`: N Đêm xoay vòng 1→2→3 trong một tiến trình, input ngẫu nhiên theo seed (đổi hướng mỗi 30 tick; 5 % nhảy, 3 % lướt, 2 % tỏa sáng, 10 % tương tác), đo RSS sau `gc()`; chạy với cờ V8 `--max-opt=1 --optimize-for-size` (ADR 0002).
+- **Bảng xếp hạng cục bộ**: nhập tên sau khi thua hoặc ở Bình Minh; top 10 lưu `data/leaderboard.json` qua `serve.js` (`GET/POST /api/leaderboard`); màn hình Bảng xếp hạng; `node serve.js --export-leaderboard out.json`. Tên có thể dùng chữ tiếng Việt có dấu.
+- **Dễ tiếp cận**: đổi phím mọi hành động (2 ô/hành động, báo trùng, khôi phục mặc định, lưu); phụ đề + mũi tên mép màn hình khi Bóng xuất hiện, gió sắp thổi, 10 s cuối, đèn < 30; giảm chuyển động (tắt rung camera, chớp màn hình, nhấp nháy); chữ tối thiểu 18 px, tùy chọn chữ lớn ×1.25.
+- Rung camera và chớp màn hình khi bị đánh / Tỏa Sáng (tắt được).
+- `scripts/package.sh` (zip phát hành), `scripts/proof.sh phase-4` (soak, bench, export, so sánh headless với Phase 3), ảnh chụp `docs/screenshots/`, ADR 0002, retro.
+- Test P4-01…P4-11 (73 test tổng); UI smoke 44 kiểm tra.
+
+### Changed
+- Bóng Mực và đom đóm vẽ theo lô (`InstancedMesh`, `Points`): cảnh bench từ ~1000 xuống vài draw call. HUD chỉ ghi DOM khi giá trị đổi và không dùng `backdrop-filter`. Trên máy dev: 1% low 20.6 → ~63 FPS.
+- Test P3-01, P2-01: chấp nhận `contract_version` 1.3 (comment `TICKET-04:`).
+
+### Giao diện + Chọn màn (làm sau tag phase-3, ngoài ticket, không đổi luật)
 
 Không có breaking change: `src/sim.js`, `src/maps.js`, `game.contract.json` và output headless giữ nguyên.
 
-### Added
+#### Added
 - **Chọn màn** (menu → Chọn màn): 3 thẻ Đêm với số đèn, số đèn cần lúc bình minh, thời lượng, đặc điểm đảo, điểm cao nhất. Cả 3 Đêm mở sẵn, không cần qua màn trước; thắng thì lưu ⭐ điểm cao nhất. Lưu ở `localStorage['ddl-progress']` (`src/progress.js`, test UI-01…UI-03).
 - **Asset đồ họa** trong `assets/` (nguồn & giấy phép ở `CREDITS.md`): texture CC0 ambientCG (cỏ, cát, đá, ván, vỏ cây, ngói, giấy), normal map mặt nước của three.js, font Be Vietnam Pro + Dancing Script (OFL, có dấu tiếng Việt).
 - Cảnh: mặt biển phản chiếu (three.js `Water`), vòm trời gradient + 1400 ngôi sao + mặt trăng, cây dừa và đá quanh mép đảo (chỉ trang trí, không có va chạm), lan can cầu tre, chuông vàng trên tháp, đèn lồng tròn có nắp/tua và quầng sáng, quầng sáng đom đóm, ACES tone mapping.
@@ -12,7 +35,7 @@ Không có breaking change: `src/sim.js`, `src/maps.js`, `game.contract.json` v�
 - Cài đặt **Đồ họa cao** (tắt để dùng mặt nước đơn giản trên máy yếu).
 - `serve.js`: MIME cho `.jpg`, `.woff2`.
 
-### Changed
+#### Changed
 - Ánh sáng nền tối thiểu 0.15 → 0.3 (vẫn tăng theo số đèn sáng) để thấy địa hình khi có texture.
 
 ## [phase-3] — Ticket-03 "Đèn cạn dầu" · Test Contract v1.2

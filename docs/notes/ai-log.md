@@ -50,3 +50,30 @@ Công cụ: Claude (claude.ai, có tool chạy code), model Claude Opus. Harness
 4. Test R-05 Phase 1 vỡ sau khi đổi luật hết choáng → cập nhật có comment TICKET-03.
 
 **Token Phase 3:** ~120–150k (ticket dạng text rẻ hơn nhiều so với ảnh Phase 2). Tiết kiệm: ADR trước, sửa nhắm đúng chỗ, tái dùng cơ chế đẩy-ra-vùng-an-toàn của Phase 2 thay vì viết mới.
+
+## Giữa Phase 3 và 4 — giao diện + Chọn màn (Claude Code trong VS Code)
+| Việc | Cách làm |
+|---|---|
+| Asset | AI tìm nguồn CC0 (ambientCG qua API, three.js waternormals, Google Fonts OFL), tải vào thư mục riêng, thu nhỏ 512 px bằng script → ~1 MB; ghi nguồn trong CREDITS.md (test UI-04 kiểm tra file và ghi nguồn) |
+| Kiểm chứng hình | Chụp ảnh WebGL thật bằng Chrome headless (SwiftShader) rồi **xem ảnh** thay vì tin code |
+
+**Lỗi AI**: (1) vách đá Đêm 3 đen thui sau khi thêm texture (ánh sáng nền tối thiểu 0.15) — chỉ phát hiện khi xem ảnh chụp; (2) câu "…mở Đêm kế tiếp" trên màn Chọn màn làm Playwright `text=Đêm kế tiếp` bấm nhầm — smoke test bắt được; (3) heredoc bash có dấu nháy làm script hỏng → chuyển sang ghi file script riêng.
+
+## Phase 4 (Claude Code trong VS Code)
+| Việc | Cách làm |
+|---|---|
+| Đọc ticket | Người dùng dán text; AI đọc thêm `docs/lab/` (CHECKPOINTS, RUBRIC, RULES, SUBMISSION) để biết DoD, rồi chép phần bắt buộc vào `docs/notes/phase-4.md` |
+| Thiết kế | Cờ `g.bench` chỉ *tắt* hành vi; test P4-02 so output headless từng byte với Phase 3 trước khi làm UI; ADR 0002 |
+| Đo trước, sửa sau | Soak và bench chạy thật ngay khi có bản đầu → thấy 2 lỗi đo (bên dưới) trước khi viết tài liệu |
+| Verify | 11 test P4 + 2 test cũ sửa version (TICKET-04) · UI smoke 17 → 44 kiểm tra · E2E bảng xếp hạng qua `serve.js` thật · `proof.sh phase-4` |
+
+**Lỗi AI / vấn đề đã gặp và cách phát hiện**
+1. **Soak "rò rỉ" RAM giả**: bản đầu cho 37 → 56 MB (vượt 1.2×). AI không vội "sửa" bằng cách đo muộn hơn; chạy probe 40 Đêm in `heapUsed` → heap phẳng ~5 MB, RSS dao động do trình biên dịch JIT. So 7 cấu hình cờ V8 rồi chọn `--max-opt=1 --optimize-for-size` (RSS phẳng 37 → 39 MB). Ghi số liệu vào ADR 0002. Cách "làm nóng vài Đêm trước khi đo" bị loại vì sai định nghĩa của ticket.
+2. **Công cụ đo làm nhiễu số đo**: bench lần đầu 1% low 20.6 FPS — một phần do gọi PowerShell mới mỗi 0.5 s để đo RAM. Sửa: một tiến trình PowerShell chạy suốt. Ghi bài học vào AGENTS.md.
+3. **Hiệu năng thật**: 200 Bóng × 4 mesh ≈ 1000 draw call → InstancedMesh. Lần chạy proof sau đó lại ra 1% low 19.7 (dao động) → tìm tiếp: HUD ghi `innerHTML` mỗi khung + `backdrop-filter` trên HUD. Sau khi sửa: ~139 FPS / 1% low ~63, ổn định qua nhiều lần chạy. Bài học: chạy bench ≥ 2 lần (thêm vào skill verify-phase).
+4. **Node 24 đổi định dạng `node --test` khi pipe** → `proof.sh` grep không ra dòng nào và dừng (set -e) → thêm `--test-reporter=tap`.
+5. **Test giao diện tự viết sai**: `text=Lưu điểm` khớp nhãn "…để lưu điểm…" (không phân biệt hoa thường); `inner_text` của phần tử đang ẩn trả rỗng → sửa selector, không sửa game. Ghi quy tắc vào AGENTS.md.
+6. **`run_cmd` có comment** `node serve.js 8000  # rồi mở …` sẽ nuốt `--export-leaderboard` → phát hiện khi đọc lại yêu cầu `<run_cmd> --export-leaderboard`; đổi thành `node serve.js`, test P4-01 giữ điều này.
+7. Phát hiện thiếu tag `phase-2` khi test P4-01 cần `git show phase-3:…` → báo người học (không tự gắn tag lùi ngày).
+
+**Token / chi phí ước tính (giao diện + Phase 4, một phiên Claude Code dài):** đầu ra ~150–200k token; đầu vào tích lũy lớn (vài triệu token, phần lớn đọc lại từ cache vì phiên dài và nhiều lần chạy công cụ). Số chính xác: xem `/cost` hoặc trang usage. Tiết kiệm: đọc ticket dạng text; dùng `grep`/`sed -n` đọc đúng đoạn cần thay vì cả file; sửa file lớn bằng script thay thế có kiểm tra (assert chuỗi tồn tại); không dùng subagent; ảnh chụp xem ở JPEG nhỏ; chạy proof một lần ở cuối thay vì sau mỗi thay đổi.
