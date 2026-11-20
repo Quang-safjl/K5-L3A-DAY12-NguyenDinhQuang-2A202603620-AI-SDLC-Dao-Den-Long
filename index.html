@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đảo Đèn Lồng</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0820; font-family: system-ui, sans-serif; color: #fde7c2; }
+    #hud { position: fixed; top: 12px; left: 12px; background: rgba(15,10,35,.7); padding: 10px 14px; border-radius: 10px; line-height: 1.6; font-size: 15px; min-width: 200px; }
+    #hud b { color: #ffb347; }
+    #help { position: fixed; bottom: 12px; left: 12px; font-size: 13px; opacity: .8; background: rgba(15,10,35,.6); padding: 6px 10px; border-radius: 8px; }
+    #toast { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); font-size: 18px; color: #ffd27a; text-shadow: 0 0 8px #ff9a2e; transition: opacity .4s; opacity: 0; }
+    #over { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(8,5,25,.75); font-size: 22px; text-align: center; }
+    #over h1 { font-size: 46px; margin: 0 0 10px; color: #ffb347; }
+    #err { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 30px; text-align: center; }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="hud"></div>
+  <div id="toast"></div>
+  <div id="help">WASD: đi · Chuột kéo / ←→: xoay camera · Space: nhảy · E: nạp đèn · F: tỏa sáng · R: chơi lại</div>
+  <div id="over"><h1 id="overTitle"></h1><div id="overText"></div><p>Nhấn <b>R</b> để chơi lại</p></div>
+  <div id="err">Không tải được game. Hãy chạy qua web server: <code>python3 -m http.server 8000</code> rồi mở http://localhost:8000 (cần Internet để tải Three.js).</div>
+  <script type="module" src="./src/game3d.js"></script>
+</body>
+</html>
