@@ -29,9 +29,10 @@ def check(name, ok, info=''):
     results.append(ok); print(('PASS ' if ok else 'FAIL ') + name + (f' — {info}' if info else ''))
 
 def win_now(pg, idx):
-    pg.evaluate("""(i)=>{const g=__ddl.game;g.lanterns.forEach(l=>{l.lit=true;l.deposited=10});const L=g.lanterns[i];L.lit=false;L.deposited=9;
-      g.player.pos=[L.pos[0]+1,L.pos[1],L.pos[2]];g.player.grounded=true;g.player.carried=1;g.shades=[];g.drifters=[]}""", idx)
-    pg.wait_for_timeout(150); pg.keyboard.press('KeyE'); pg.wait_for_timeout(400)
+    # Ticket-03: thắng ở bình minh khi đủ đèn sáng → đặt mọi đèn sáng và tua tới 1 tick trước bình minh
+    pg.evaluate("""(i)=>{const g=__ddl.game;g.lanterns.forEach(l=>{l.lit=true;l.deposited=10;l.fuelU=6000;l.everLit=true});
+      g.shades=[];g.drifters=[];g.timeStart=g.simTick/60+0.05}""", idx)
+    pg.wait_for_timeout(600)
 
 with sync_playwright() as p:
     exe = sys.argv[1] if len(sys.argv) > 1 else None
@@ -57,7 +58,7 @@ with sync_playwright() as p:
     pg.click('#scrPause >> text=Tiếp tục'); pg.wait_for_timeout(300)
     check('Tiếp tục chơi', not pg.is_visible('#scrPause') and pg.evaluate('__ddl.game.state') == 'playing')
     win_now(pg, 4)
-    check('Thắng Đêm 1 → màn kết quả', pg.is_visible('#scrResult') and 'Thắng' in pg.inner_text('#resTitle'))
+    check('Thắng Đêm 1 ở bình minh → màn kết quả', pg.is_visible('#scrResult') and 'bình minh' in pg.inner_text('#resTitle'))
     pg.click('text=Đêm kế tiếp'); pg.wait_for_timeout(200)
     check('Sang Đêm 2', 'Đêm 2' in pg.inner_text('#introTitle'))
     pg.keyboard.press('Enter'); pg.wait_for_timeout(200); win_now(pg, 5)
@@ -72,6 +73,15 @@ with sync_playwright() as p:
     check('Thua (rơi khi còn 1 lửa) → chơi lại Đêm, không có Đêm kế', pg.is_visible('#scrResult') and not pg.is_visible('#resNext'))
     pg.click('#scrResult >> text=Chơi lại Đêm'); pg.wait_for_timeout(200)
     check('Chơi lại đúng Đêm 1', 'Đêm 1' in pg.inner_text('#introTitle'))
+    pg.keyboard.press('Enter'); pg.wait_for_timeout(200); pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
+    pg.click('#scrPause >> text=Về menu'); pg.wait_for_timeout(200); pg.click('#scrMenu >> text=Cài đặt')
+    pg.check('#setCb'); pg.click('#scrSettings >> text=Xong')
+    check('Chế độ mù màu được lưu và áp dụng', '"colorblind": true' in (pg.evaluate("localStorage.getItem('ddl-settings')") or '').replace('":true', '": true') and pg.evaluate("document.body.classList.contains('cb')"))
+    pg.click('#scrMenu >> text=Bắt đầu'); pg.wait_for_timeout(200); pg.keyboard.press('Enter'); pg.wait_for_timeout(200)
+    pg.evaluate("(()=>{const g=__ddl.game;g.successfulLights=2})()"); pg.wait_for_timeout(200)
+    check('HUD sức chứa = 10 + 2×thắp (14 ô)', pg.eval_on_selector_all('#hudBar i', 'e=>e.length') == 14, pg.inner_text('#hudBar'))
+    pg.evaluate("(()=>{const g=__ddl.game;const L=g.lanterns[0];L.lit=true;L.fuelU=1200;L.everLit=true;g.player.pos=[L.pos[0]+1,0,L.pos[2]];g.shades=[]})()"); pg.wait_for_timeout(200)
+    check('Nhắc châm dầu ở đèn yếu', 'Châm dầu' in pg.inner_text('#hudPrompt'), pg.inner_text('#hudPrompt'))
     check('Không có lỗi JavaScript', not errs, '; '.join(errs[:3]))
     b.close()
 srv.shutdown()
