@@ -10,7 +10,8 @@ const near = (a, b, eps = 0.02) => Math.abs(a - b) <= eps;
 test('P2-01 contract v1.1: tuning khớp số chuẩn Ticket-02', () => {
   const c = JSON.parse(readFileSync(join(ROOT, 'game.contract.json'), 'utf8'));
   // TICKET-03: contract nâng lên 1.2 (tương thích ngược các khóa v1.1)
-  assert.ok(['1.1', '1.2'].includes(c.contract_version));
+  // TICKET-04: contract nâng lên 1.3 (chỉ thêm bench_cmd/soak_cmd; khóa v1.1 giữ nguyên)
+  assert.ok(['1.1', '1.2', '1.3'].includes(c.contract_version));
   const want = {
     player_speed: 6, carry_capacity: 10, lantern_cost: 10, pickup_radius: 1, interact_radius: 2, pulse_cost: 3, pulse_radius: 5,
     pulse_cooldown_s: 3, pulse_push_m: 4, pulse_stun_s: 2, safe_radius: 6, shade_speed: 4, shade_hit_radius: 1, flames: 3,

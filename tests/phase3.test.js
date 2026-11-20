@@ -9,7 +9,8 @@ const far = { pos: [0, 0, -30] }; // người chơi ở xa để Bóng Mực kh�
 
 test('P3-01 contract v1.2: khóa mới và thời lượng đêm 240/270/300', () => {
   const c = JSON.parse(readFileSync(join(ROOT, 'game.contract.json'), 'utf8'));
-  assert.equal(c.contract_version, '1.2');
+  // TICKET-04: contract nâng lên v1.3 (thêm bench_cmd, soak_cmd); khóa tuning v1.2 giữ nguyên nên phần còn lại không đổi
+  assert.equal(c.contract_version, '1.3');
   const want = { fuel_max: 100, fuel_decay_per_s: 1.0, fuel_per_mote: 10, relight_cost: 5, win_ratio: 0.6, drain_per_s: 5, low_fuel_threshold: 30, capacity_max: 20, night1_duration_s: 240, night2_duration_s: 270, night3_duration_s: 300 };
   for (const [k, v] of Object.entries(want)) assert.equal(c.tuning[k], v, k);
 });

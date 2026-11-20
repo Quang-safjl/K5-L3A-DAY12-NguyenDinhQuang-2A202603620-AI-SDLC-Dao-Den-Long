@@ -1,4 +1,6 @@
-// Đảo Đèn Lồng — logic game thuần, tất định (Test Contract v1.2, Ticket-03 "Đèn cạn dầu").
+// Đảo Đèn Lồng — logic game thuần, tất định (Test Contract v1.3; luật Ticket-03 "Đèn cạn dầu").
+// TICKET-04: cờ g.bench (chỉ cảnh benchmark, mặc định false) tắt sinh thực thể, sát thương, nhặt, hao dầu,
+// điều kiện kết thúc và việc Bóng phát hiện Mây. Khi bench=false mọi nhánh giữ nguyên → headless không đổi.
 // Dầu đèn lưu bằng đơn vị nguyên 1/60 (fuelU) để không sai số; 100 dầu = 6000 fuelU.
 // Dùng chung cho game 3D (trình duyệt) và headless (Node). Không dùng Math.random/Date/DOM.
 import { NIGHTS } from './maps.js';
@@ -62,7 +64,7 @@ export function createGame({ tuning, seed = 0, night = 1, scenario = null }) {
   const T = tuning;
   const g = {
     T, map, night, rng: makeRng(seed),
-    tick: 0, simTick: 0, state: 'playing', paused: false, score: 0, successfulLights: 0,
+    tick: 0, simTick: 0, state: 'playing', paused: false, score: 0, successfulLights: 0, bench: false,
     timeStart: T[map.durationKey],
     player: {
       pos: [...map.start], vel: [0, 0, 0], grounded: true, facing: [0, 1],
@@ -186,7 +188,7 @@ function pickWaypoint(g) {
   return [cx + Math.cos(a) * rr, 0, cz + Math.sin(a) * rr];
 }
 
-function playerTargetable(g) { return g.player.fallWait <= 0; }
+function playerTargetable(g) { return !g.bench && g.player.fallWait <= 0; } // bench: Bóng chỉ wander
 
 // ---------- Scenario ----------
 function applyScenario(g, sc) {
@@ -374,7 +376,7 @@ export function step(g, input) {
 
   // 2b. Dầu: hao 1/s + bị hút 5/s mỗi Bóng đang drain; hết dầu thì tắt ngay
   for (const l of g.lanterns) {
-    if (!l.lit) continue;
+    if (!l.lit || g.bench) continue; // bench: không hao dầu
     l.fuelU -= Math.round(T.fuel_decay_per_s);
     for (const s of [...g.shades].sort(byId)) {
       if (s.state !== 'drain' || s.target !== l.id) continue;
@@ -407,8 +409,8 @@ export function step(g, input) {
   }
   const active = P.fallWait <= 0;
 
-  // 4. Nhặt đom đóm và bùa
-  if (active) {
+  // 4. Nhặt đom đóm và bùa (bench: tắt)
+  if (active && !g.bench) {
     for (let i = 0; i < g.motes.length && P.carried < capacity(g);) {
       const m = g.motes[i];
       if (m.bornTick < g.simTick && dXZ(m.pos, P.pos) <= T.pickup_radius && Math.abs(P.pos[1] - m.pos[1]) <= PICK_DY) {
@@ -560,8 +562,8 @@ export function step(g, input) {
     d.pos[1] = (groundAt(g, d.pos[0], d.pos[2]) ?? 0) + 1.5;
   }
 
-  // 9. Chạm: Gió Lạc cướp trước, rồi Bóng Mực (id tăng dần)
-  if (active) {
+  // 9. Chạm: Gió Lạc cướp trước, rồi Bóng Mực (id tăng dần) (bench: không sát thương)
+  if (active && !g.bench) {
     for (const d of [...g.drifters].sort(byId)) {
       if (d.state === 'chase' && dXZ(d.pos, P.pos) <= DRIFTER_TOUCH && P.carried > 0) {
         const amount = Math.min(DRIFTER_STEAL, P.carried);
@@ -586,7 +588,8 @@ export function step(g, input) {
     }
   }
 
-  // 10. Sinh theo lịch
+  // 10. Sinh theo lịch (bench: không sinh thêm)
+  if (!g.bench) {
   if (g.randomMotes && g.simTick % MOTE_EVERY === 0 && g.motes.length < MOTE_CAP) spawnRandomMote(g);
   if (g.randomShades) {
     let n = 0;
@@ -599,13 +602,15 @@ export function step(g, input) {
     const p = pts[Math.floor(g.rng() * pts.length)];
     g.drifters.push({ id: `D${g.nextDrifter++}`, pos: [p[0], (groundAt(g, p[0], p[2]) ?? 0) + 1.5, p[2]], state: 'idle', stolen: 0, stoleOnce: false, ticks: 0, waypoint: null });
   }
+  }
 
   g.tick++;
   // 11. Thắng / thua
   let result = null;
   // TICKET-03: không thắng sớm; bình minh còn sống và đủ ceil(win_ratio × tổng) đèn sáng thì thắng
   const litNow = g.lanterns.filter((l) => l.lit);
-  if (P.flames <= 0) result = ['lost', 'no_flames'];
+  if (g.bench) result = null; // bench: không kết thúc Đêm
+  else if (P.flames <= 0) result = ['lost', 'no_flames'];
   else if (timeLeft(g) <= 1e-9) result = litNow.length >= Math.ceil(T.win_ratio * g.lanterns.length - 1e-9) ? ['won', 'dawn_survived'] : ['lost', 'dawn'];
   if (result) {
     g.state = result[0];
