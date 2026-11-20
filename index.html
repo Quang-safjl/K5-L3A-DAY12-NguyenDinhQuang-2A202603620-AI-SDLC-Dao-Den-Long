@@ -7,85 +7,119 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🏮%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="./assets/fonts/fonts.css" />
   <style>
-    :root { --ui: #F5F1E6; --gold: #F2C14E; --danger: #FF5A5F; --lit: #FFB347; --mote: #FFE58A; --panel: rgba(14,20,48,.82);
-      --glass: rgba(20,26,64,.55); --line: rgba(242,193,78,.35); }
+    /* TICKET-04: mọi cỡ chữ = Npx × --k (N ≥ 18). Chữ lớn: --k = 1.25 */
+    :root { --k: 1; --ui: #F5F1E6; --gold: #F2C14E; --danger: #FF5A5F; --lit: #FFB347; --mote: #FFE58A; --edge: #7A3CFF;
+      --glass: rgba(20,26,64,.62); --line: rgba(242,193,78,.35); }
+    body.big { --k: 1.25; }
+    body.cb { --danger: #FFFFFF; --edge: #00B3FF; }
     html, body { margin: 0; height: 100%; overflow: hidden; background: #0E1430; font-family: "Be Vietnam Pro", system-ui, "Segoe UI", sans-serif; color: var(--ui); user-select: none; }
+    body { font-size: calc(18px * var(--k)); }
     canvas { display: block; }
     .hud { position: fixed; pointer-events: none; font-weight: 600; text-shadow: 0 1px 3px #000; }
-    .chip { background: var(--glass); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 4px 18px rgba(0,0,0,.35); }
-    #hudFlames { top: 14px; left: 16px; font-size: 24px; letter-spacing: 4px; }
-    #hudClock { top: 12px; left: 50%; transform: translateX(-50%); font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+    /* HUD không dùng backdrop-filter: cảnh 3D đổi mỗi khung nên GPU phải làm mờ lại liên tục (giật trên GPU tích hợp) */
+    .chip { background: rgba(14,20,52,.78); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+    #hudFlames { top: 14px; left: 16px; font-size: calc(24px * var(--k)); letter-spacing: 4px; }
+    #hudClock { top: 12px; left: 50%; transform: translateX(-50%); font-size: calc(30px * var(--k)); font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
     #hudClock.warn { color: var(--danger); animation: blink .6s steps(2) infinite; }
-    body.cb { --danger: #FFFFFF; }
     body.cb #hudClock.warn::before { content: "⚠ "; }
     @keyframes blink { 50% { opacity: .25; } }
-    #hudRight { top: 12px; right: 16px; text-align: right; font-size: 17px; line-height: 1.5; }
-    #hudRight small { opacity: .75; font-weight: 400; }
-    #hudRight .score { color: var(--gold); font-size: 22px; font-weight: 800; }
-    #hudBar { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; align-items: center; }
-    #hudBar i { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gold); background: rgba(0,0,0,.35); }
+    #hudRight { top: 12px; right: 16px; text-align: right; font-size: calc(18px * var(--k)); line-height: 1.5; }
+    #hudRight small { opacity: .8; font-weight: 400; font-size: calc(18px * var(--k)); }
+    #hudRight .score { color: var(--gold); font-size: calc(22px * var(--k)); font-weight: 800; }
+    #hudBar { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; align-items: center; font-size: calc(18px * var(--k)); }
+    #hudBar i { width: calc(20px * var(--k)); height: calc(20px * var(--k)); border-radius: 50%; border: 2px solid var(--gold); background: rgba(0,0,0,.35); }
     #hudBar i.on { background: radial-gradient(circle, #FFF6C2 0 35%, var(--mote) 60%, #e0a92c 100%); box-shadow: 0 0 10px var(--mote); }
     #hudCd { bottom: 16px; right: 16px; display: flex; gap: 10px; }
-    .cd { width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 12px; text-align: center; background: var(--glass); backdrop-filter: blur(6px); position: relative; overflow: hidden; box-shadow: 0 0 14px rgba(242,193,78,.25); }
+    .cd { width: calc(84px * var(--k)); height: calc(84px * var(--k)); border-radius: 50%; border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: calc(18px * var(--k)); line-height: 1.15; text-align: center; background: rgba(14,20,52,.78); position: relative; overflow: hidden; box-shadow: 0 0 14px rgba(242,193,78,.25); }
     .cd .fill { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,90,95,.55); }
     .cd span { position: relative; }
-    #hudPrompt { bottom: 72px; left: 50%; transform: translateX(-50%); font-size: 19px; color: var(--lit); display: none; }
-    #hudInfo { top: 64px; left: 50%; transform: translateX(-50%); font-size: 16px; color: var(--gold); }
+    #hudPrompt { bottom: calc(76px * var(--k)); left: 50%; transform: translateX(-50%); font-size: calc(20px * var(--k)); color: var(--lit); display: none; }
+    #hudInfo { top: calc(70px * var(--k)); left: 50%; transform: translateX(-50%); font-size: calc(18px * var(--k)); color: var(--gold); }
     #hudInfo:empty { display: none; }
     #hudArrow { width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 28px solid var(--lit); display: none; filter: drop-shadow(0 0 6px #000); }
-    #fps { bottom: 4px; left: 6px; font-size: 11px; opacity: .6; font-weight: 400; }
-    #help { bottom: 22px; left: 16px; font-size: 12px; opacity: .8; font-weight: 400; max-width: 300px; line-height: 1.5; }
-    .screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; gap: 12px; padding: 16px; box-sizing: border-box; overflow-y: auto;
+    #fps { bottom: 4px; left: 6px; font-size: calc(18px * var(--k)); opacity: .55; font-weight: 400; }
+    #help { bottom: calc(34px * var(--k)); left: 16px; font-size: calc(18px * var(--k)); opacity: .85; font-weight: 400; max-width: 330px; line-height: 1.4; }
+    /* Phụ đề / chỉ báo hình ảnh */
+    #captions { position: fixed; left: 50%; top: calc(118px * var(--k)); transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; align-items: center; pointer-events: none; z-index: 5; }
+    .cap { font-size: calc(20px * var(--k)); font-weight: 700; padding: 6px 16px; border-radius: 12px; background: rgba(8,10,28,.82); border: 2px solid var(--gold); text-shadow: 0 1px 2px #000; }
+    .cap.shade { border-color: var(--edge); }
+    .cap.danger { border-color: var(--danger); color: #fff; }
+    .edgeArrow { position: fixed; width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-bottom: 32px solid var(--edge); filter: drop-shadow(0 0 6px #000); pointer-events: none; z-index: 4; }
+    #flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 3; }
+    .screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; gap: 12px; padding: 16px; box-sizing: border-box; overflow-y: auto; z-index: 10;
       background: radial-gradient(ellipse at 50% 35%, rgba(255,179,71,.14), transparent 55%), linear-gradient(180deg, rgba(10,14,38,.55), rgba(10,14,38,.88)); }
     .screen.show { display: flex; animation: fadeIn .35s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } }
-    .screen h1 { font-family: "Dancing Script", cursive; font-size: 76px; line-height: 1.05; margin: 0 0 4px; color: var(--lit); text-shadow: 0 0 22px rgba(255,179,71,.75), 0 0 60px rgba(255,120,40,.35); }
-    .screen h2 { font-size: 30px; margin: 0; color: var(--gold); font-weight: 800; }
-    .screen p { max-width: 560px; font-size: 18px; line-height: 1.55; margin: 4px; }
-    .lanterns-deco { font-size: 34px; letter-spacing: 18px; filter: drop-shadow(0 0 10px rgba(255,150,40,.8)); animation: sway 3s ease-in-out infinite; transform-origin: top; }
+    .screen h1 { font-family: "Dancing Script", cursive; font-size: calc(72px * var(--k)); line-height: 1.05; margin: 0 0 4px; color: var(--lit); text-shadow: 0 0 22px rgba(255,179,71,.75), 0 0 60px rgba(255,120,40,.35); }
+    .screen h2 { font-size: calc(30px * var(--k)); margin: 0; color: var(--gold); font-weight: 800; }
+    .screen p { max-width: 640px; font-size: calc(18px * var(--k)); line-height: 1.55; margin: 4px; }
+    .lanterns-deco { font-size: calc(34px * var(--k)); letter-spacing: 18px; filter: drop-shadow(0 0 10px rgba(255,150,40,.8)); animation: sway 3s ease-in-out infinite; transform-origin: top; }
     @keyframes sway { 50% { transform: rotate(3deg); } }
-    button { font: inherit; font-size: 18px; font-weight: 600; padding: 11px 28px; min-width: 240px; border-radius: 999px; border: 2px solid var(--gold); color: var(--ui); cursor: pointer;
+    button { font: inherit; font-size: calc(18px * var(--k)); font-weight: 600; padding: 10px 28px; min-width: calc(240px * var(--k)); border-radius: 999px; border: 2px solid var(--gold); color: var(--ui); cursor: pointer;
       background: linear-gradient(180deg, #2a3570, #1B2350); box-shadow: 0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); transition: transform .12s, box-shadow .12s, background .12s; }
     button:hover, button:focus-visible { background: linear-gradient(180deg, #8a4b1c, #5a2c12); box-shadow: 0 0 20px rgba(255,179,71,.55), inset 0 1px 0 rgba(255,255,255,.2); transform: translateY(-1px); outline: none; }
+    button:disabled { opacity: .5; cursor: default; }
     button.primary { background: linear-gradient(180deg, #e2892f, #b5541c); border-color: #FFD58A; }
-    label { font-size: 17px; display: flex; gap: 12px; align-items: center; }
-    .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 20px; padding: 22px 28px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+    button.small { min-width: 0; padding: 6px 16px; }
+    label { font-size: calc(18px * var(--k)); display: flex; gap: 12px; align-items: center; }
+    .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 20px; padding: 18px 26px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
     input[type=range] { accent-color: var(--lit); width: 180px; }
-    input[type=checkbox] { accent-color: var(--lit); width: 18px; height: 18px; }
-    #levels { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; max-width: 960px; }
-    .level { width: 260px; min-width: 0; padding: 0; border-radius: 18px; overflow: hidden; text-align: left; display: flex; flex-direction: column; border: 2px solid var(--line); background: var(--glass); backdrop-filter: blur(8px); }
-    .level .art { height: 120px; position: relative; display: flex; align-items: flex-end; justify-content: center; font-size: 22px; padding-bottom: 10px; letter-spacing: 4px;
+    input[type=checkbox] { accent-color: var(--lit); width: 20px; height: 20px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    /* Chọn màn */
+    #levels { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; max-width: 980px; }
+    .level { width: calc(280px * var(--k)); min-width: 0; padding: 0; border-radius: 18px; overflow: hidden; text-align: left; display: flex; flex-direction: column; border: 2px solid var(--line); background: var(--glass); backdrop-filter: blur(8px); }
+    .level .art { height: 110px; position: relative; display: flex; align-items: flex-end; justify-content: center; font-size: 22px; padding-bottom: 10px; letter-spacing: 4px;
       background: radial-gradient(circle at 78% 26%, #f7f1d0 0 7%, rgba(247,241,208,.22) 8%, transparent 20%), linear-gradient(180deg, #0b1030 0%, #1d2b5c 68%, #12384A 69%, #0e2c3a 100%); }
-    .level .art .num { position: absolute; top: 6px; left: 14px; font-family: "Dancing Script", cursive; font-size: 30px; letter-spacing: 0; color: var(--lit); text-shadow: 0 0 10px rgba(255,179,71,.8); }
+    .level .art .num { position: absolute; top: 6px; left: 14px; font-family: "Dancing Script", cursive; font-size: calc(30px * var(--k)); letter-spacing: 0; color: var(--lit); text-shadow: 0 0 10px rgba(255,179,71,.8); }
     .level .body { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 4px; }
-    .level .name { font-size: 21px; font-weight: 800; color: var(--gold); }
-    .level .meta { font-size: 14px; opacity: .85; font-weight: 400; line-height: 1.5; }
-    .level .best { font-size: 15px; color: var(--mote); }
-    .level.locked { filter: grayscale(.85) brightness(.6); cursor: not-allowed; }
-    .level.locked:hover { transform: none; box-shadow: none; background: var(--glass); }
-    .level .lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 42px; background: rgba(0,0,0,.35); }
+    .level .name { font-size: calc(22px * var(--k)); font-weight: 800; color: var(--gold); }
+    .level .meta { font-size: calc(18px * var(--k)); opacity: .9; font-weight: 400; line-height: 1.45; }
+    .level .best { font-size: calc(18px * var(--k)); color: var(--mote); }
     .level.cleared { border-color: var(--gold); }
+    /* Bảng xếp hạng */
+    table.board { border-collapse: collapse; font-size: calc(18px * var(--k)); min-width: min(720px, 94vw); background: var(--glass); border-radius: 16px; overflow: hidden; }
+    table.board th, table.board td { padding: 6px 14px; text-align: left; }
+    table.board th { color: var(--gold); border-bottom: 1px solid var(--line); }
+    table.board tr:nth-child(even) td { background: rgba(255,255,255,.04); }
+    table.board tr.me td { background: rgba(255,179,71,.22); }
+    table.board th.num, table.board td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .nameForm { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+    .nameForm input { font: inherit; font-size: calc(20px * var(--k)); padding: 8px 14px; border-radius: 12px; border: 2px solid var(--gold); background: #10163a; color: var(--ui); width: calc(240px * var(--k)); text-align: center; }
+    .msg { min-height: 1.4em; font-size: calc(18px * var(--k)); color: var(--mote); }
+    .msg.err { color: var(--danger); }
+    /* Đổi phím */
+    #keyGrid { display: grid; grid-template-columns: repeat(2, auto auto auto); gap: 6px 12px; align-items: center; font-size: calc(18px * var(--k)); }
+    #keyGrid .act { text-align: right; }
+    #keyGrid button { min-width: calc(110px * var(--k)); padding: 5px 10px; }
+    #keyGrid button.capturing { border-color: #fff; background: #5a2c12; }
+    #keyGrid button.dup { border-color: var(--danger); }
     #err { display: none; }
-    @media (max-width: 640px) { .screen h1 { font-size: 52px; } button { min-width: 200px; } #help { display: none; } }
+    /* Giảm chuyển động: tắt hoạt ảnh/chớp giao diện */
+    body.rm *, body.rm *::before { animation: none !important; transition: none !important; }
+    @media (max-width: 640px) { .screen h1 { font-size: 52px; } button { min-width: 200px; } #help { display: none; } #keyGrid { grid-template-columns: auto auto auto; } }
   </style>
   <script type="importmap">
-    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                   "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    { "imports": { "three": "./vendor/three/three.module.js",
+                   "three/addons/": "./vendor/three/addons/" } }
   </script>
 </head>
 <body>
+  <div id="flash"></div>
   <div id="hudFlames" class="hud chip"></div>
   <div id="hudClock" class="hud chip"></div>
   <div id="hudRight" class="hud chip"></div>
   <div id="hudInfo" class="hud chip"></div>
   <div id="hudBar" class="hud"></div>
   <div id="hudCd" class="hud">
-    <div class="cd" id="cdDash"><div class="fill"></div><span>Lướt<br>Shift</span></div>
-    <div class="cd" id="cdPulse"><div class="fill"></div><span>Tỏa<br>F</span></div>
+    <div class="cd" id="cdDash"><div class="fill"></div><span>Lướt<br><b class="key" data-key="dash">Shift</b></span></div>
+    <div class="cd" id="cdPulse"><div class="fill"></div><span>Tỏa<br><b class="key" data-key="pulse">F</b></span></div>
   </div>
   <div id="hudPrompt" class="hud chip"></div>
   <div id="hudArrow" class="hud"></div>
-  <div id="help" class="hud">WASD đi · kéo chuột/←→ xoay · Space nhảy · Shift lướt · E nạp đèn · F tỏa sáng · Esc/P tạm dừng</div>
+  <div id="help" class="hud"></div>
+  <div id="captions" class="hud" aria-live="polite"></div>
+  <div id="edgeArrows" class="hud"></div>
   <div id="fps" class="hud"></div>
 
   <div id="scrMenu" class="screen show">
@@ -94,12 +128,19 @@
     <p>Giúp Mây gom đom đóm, thắp lại các Đèn Lồng Lớn trên ba hòn đảo trước bình minh.</p>
     <button class="primary" data-act="start">Bắt đầu</button>
     <button data-act="levels">Chọn màn</button>
+    <button data-act="board">Bảng xếp hạng</button>
     <button data-act="settings">Cài đặt</button>
   </div>
   <div id="scrLevels" class="screen">
     <h2>Chọn màn</h2>
     <p>Chọn hòn đảo bạn muốn giữ sáng tới bình minh.</p>
     <div id="levels"></div>
+    <button data-act="menu">Quay lại</button>
+  </div>
+  <div id="scrBoard" class="screen">
+    <h2>Bảng xếp hạng</h2>
+    <p id="boardNote">Top 10 · điểm = tổng điểm các Đêm đã thắng trong một lượt chơi</p>
+    <table class="board"><thead><tr><th>#</th><th>Tên</th><th class="num">Điểm</th><th class="num">Đêm thắng</th><th>Thời điểm</th></tr></thead><tbody id="boardBody"></tbody></table>
     <button data-act="menu">Quay lại</button>
   </div>
   <div id="scrIntro" class="screen">
@@ -110,15 +151,29 @@
   <div id="scrResult" class="screen">
     <h1 id="resTitle"></h1>
     <p id="resText"></p>
-    <button id="resNext" class="primary" data-act="next">Đêm kế tiếp</button>
-    <button data-act="retry">Chơi lại Đêm</button>
-    <button data-act="menu">Về menu</button>
+    <form class="nameForm" id="resForm" autocomplete="off">
+      <label for="resName">Nhập tên để lưu điểm (3–12 ký tự: chữ, số, _)</label>
+      <input id="resName" maxlength="12" spellcheck="false" />
+      <button type="submit" class="primary">Lưu điểm</button>
+      <div class="msg" id="resMsg"></div>
+    </form>
+    <div class="row">
+      <button id="resNext" class="primary" data-act="next">Đêm kế tiếp</button>
+      <button data-act="retry">Chơi lại Đêm</button>
+      <button data-act="menu">Về menu</button>
+    </div>
   </div>
   <div id="scrDawn" class="screen">
     <div class="lanterns-deco">🌅</div>
     <h1>Bình Minh</h1>
     <p>Ba hòn đảo đã sáng trở lại. Ông Đăng mỉm cười: "Cháu giỏi lắm, Mây."</p>
     <h2 id="dawnScore"></h2>
+    <form class="nameForm" id="dawnForm" autocomplete="off">
+      <label for="dawnName">Nhập tên để lưu điểm (3–12 ký tự: chữ, số, _)</label>
+      <input id="dawnName" maxlength="12" spellcheck="false" />
+      <button type="submit" class="primary">Lưu điểm</button>
+      <div class="msg" id="dawnMsg"></div>
+    </form>
     <button data-act="menu">Về menu</button>
   </div>
   <div id="scrPause" class="screen">
@@ -134,11 +189,27 @@
       <label>Âm lượng <input id="setVol" type="range" min="0" max="1" step="0.05" /></label>
       <label>Độ nhạy chuột <input id="setSens" type="range" min="0.05" max="1" step="0.05" /></label>
       <label><input id="setCb" type="checkbox" /> Bảng màu dễ phân biệt (mù màu)</label>
+      <label><input id="setCap" type="checkbox" /> Phụ đề &amp; chỉ báo hình ảnh</label>
+      <label><input id="setRm" type="checkbox" /> Giảm chuyển động (tắt rung camera, chớp màn hình)</label>
+      <label><input id="setBig" type="checkbox" /> Chữ lớn (×1.25)</label>
       <label><input id="setHq" type="checkbox" /> Đồ họa cao (mặt nước phản chiếu)</label>
     </div>
-    <button data-act="settingsBack">Xong</button>
+    <div class="row">
+      <button data-act="keys">Đổi phím…</button>
+      <button data-act="settingsBack">Xong</button>
+    </div>
   </div>
-  <div id="err" class="screen"><p>Không tải được game. Hãy chạy <code>node serve.js</code> rồi mở http://localhost:8000 (cần Internet để tải Three.js).</p></div>
+  <div id="scrKeys" class="screen">
+    <h2>Đổi phím</h2>
+    <p>Bấm vào một ô rồi nhấn phím mới. Ô phụ: bấm chuột phải để xóa.</p>
+    <div id="keyGrid"></div>
+    <div class="msg" id="keyMsg"></div>
+    <div class="row">
+      <button data-act="keysReset">Khôi phục mặc định</button>
+      <button data-act="keysBack">Quay lại cài đặt</button>
+    </div>
+  </div>
+  <div id="err" class="screen"><p>Không tải được game. Hãy chạy <code>node serve.js</code> rồi mở http://localhost:8000.</p></div>
   <script type="module" src="./src/game3d.js"></script>
 </body>
 </html>
