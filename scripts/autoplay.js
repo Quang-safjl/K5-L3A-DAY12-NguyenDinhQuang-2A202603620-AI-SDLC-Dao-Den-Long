@@ -3,7 +3,7 @@
 // Bot chỉ ĐỌC trạng thái sim để chọn nút bấm; kết quả được kiểm lại bằng headless.js thật.
 // Dùng: node scripts/autoplay.js --seed 42 --night 1 --out scenarios/autoplay-n1-seed42.inputs.json
 import { readFileSync, writeFileSync } from 'node:fs';
-import { createGame, step } from '../src/sim.js';
+import { createGame, step, capacity, fuelOf } from '../src/sim.js';
 
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > 0 ? process.argv[i + 1] : d; };
 const seed = parseInt(arg('seed', '42'), 10);
@@ -64,12 +64,13 @@ const limit = T[`night${night}_duration_s`] * 60;
 while (g.state === 'playing' && k < limit) {
   const P = g.player;
   const cur = { move: [0, 0], cam_yaw_deg: 0, jump: false, interact: false, pulse: false, dash: false };
-  const unlit = g.lanterns.filter((l) => !l.lit).sort((a, b) => d2(a.pos, P.pos) + 15 * Math.abs(level(a.pos[1]) - level(P.pos[1])) - d2(b.pos, P.pos) - 15 * Math.abs(level(b.pos[1]) - level(P.pos[1])));
-  const target = unlit[0];
-  const need = T.lantern_cost - target.deposited;
+  // Ticket-03: việc cần làm = đèn tắt, hoặc đèn sáng sắp cạn (< 45) → giữ đảo sáng tới bình minh
+  const unlit = g.lanterns.filter((l) => !l.lit || fuelOf(l) < 45).sort((a, b) => d2(a.pos, P.pos) + 15 * Math.abs(level(a.pos[1]) - level(P.pos[1])) - d2(b.pos, P.pos) - 15 * Math.abs(level(b.pos[1]) - level(P.pos[1])));
+  const target = unlit[0] || [...g.lanterns].sort((a, b) => fuelOf(a) - fuelOf(b))[0];
+  const need = target.lit ? Math.ceil((100 - fuelOf(target)) / 10) : (target.everLit ? T.relight_cost : T.lantern_cost) - target.deposited;
   const reachable = g.motes.filter((m) => night !== 3 || level(m.pos[1]) <= Math.max(level(P.pos[1]), level(target.pos[1])));
   let goal;
-  if (P.carried >= Math.min(need, T.carry_capacity) || (P.carried > 0 && reachable.length === 0)) {
+  if ((unlit.length && P.carried >= Math.min(need, capacity(g))) || (P.carried > 0 && reachable.length === 0) || P.carried >= capacity(g)) {
     goal = target.pos;
     if (d2(goal, P.pos) <= T.interact_radius - 0.3 && Math.abs(goal[1] - P.pos[1]) < 1) cur.interact = !prev.interact;
   } else if (reachable.length) {

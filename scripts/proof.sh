@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Sinh lại toàn bộ bằng chứng: bash scripts/proof.sh [phase-2]
+# Sinh lại toàn bộ bằng chứng: bash scripts/proof.sh [phase-3]
 # Chạy lại ở tag tương ứng phải ra cùng kết quả (trừ thời gian đo / thông tin máy).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-PHASE="${1:-phase-2}"
+PHASE="${1:-phase-3}"
 OUT="docs/proof/$PHASE"
 mkdir -p "$OUT/runs"
 R="$OUT/test-report.txt"
@@ -13,7 +13,7 @@ R="$OUT/test-report.txt"
   echo "code commit (lần sửa cuối của src, headless.js, contract, tests): $(git log -1 --format=%h -- src headless.js game.contract.json tests 2>/dev/null)"
   echo "node: $(node --version) · $(uname -sm)"
   echo
-  echo "## 1. Unit + scenario test (node --test) — Phase 1 (regression) + Phase 2"
+  echo "## 1. Unit + scenario test (node --test) — Phase 1–2 (regression) + Phase 3"
   node --test 2>&1 | grep -E '^(ok|not ok)|^# (tests|pass|fail)'
 } > "$R"
 
@@ -26,7 +26,7 @@ R="$OUT/test-report.txt"
   done
 
   echo; echo "## 3. Bot chơi trọn đêm (inputs → headless.js thật)"
-  echo "### 3a. Bản đồ không có kẻ địch (scenarios/calm.scenario.json): chứng minh thắp được hết đèn"
+  echo "### 3a. Bản đồ không có kẻ địch (scenarios/calm.scenario.json): chứng minh giữ được đủ đèn tới bình minh"
   for n in 1 2 3; do
     node scripts/autoplay.js --night $n --seed 42 --scenario scenarios/calm.scenario.json --out "scenarios/autoplay-calm-n$n.inputs.json" >/dev/null
     node headless.js --seed 42 --night $n --scenario scenarios/calm.scenario.json --inputs "scenarios/autoplay-calm-n$n.inputs.json" \
