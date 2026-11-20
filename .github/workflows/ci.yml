@@ -1,0 +1,23 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm test
+      - name: Tính tất định (chạy 2 lần, so sánh)
+        run: |
+          node headless.js --seed 42 --night 1 --ticks 3000 --out a.jsonl
+          node headless.js --seed 42 --night 1 --ticks 3000 --out b.jsonl
+          cmp a.jsonl b.jsonl
+      - name: Bot chơi trọn Đêm 1 phải thắng
+        run: |
+          node headless.js --seed 42 --night 1 --inputs scenarios/autoplay-seed42.inputs.json --ticks 18000 --out w.jsonl
+          tail -1 w.jsonl | grep '"state":"won"'
