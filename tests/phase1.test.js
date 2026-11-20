@@ -115,16 +115,18 @@ test('R-05 không đủ ánh sáng thì không tỏa sáng; có cooldown', () =>
   assert.deepEqual(events(cd.lines, 'pulse').map((e) => e.tick), [1, CD + 1]);
 });
 
-test('R-05 hết choáng sau pulse_stun_s thì đuổi tiếp', () => {
+test('R-05 hết choáng sau pulse_stun_s thì về wander rồi đuổi tiếp', () => {
   const n = Math.round(T.pulse_stun_s * 60);
   const r = runHeadless({
-    ticks: n + 1, every: 1,
+    ticks: n + 2, every: 1,
     scenario: cleanScenario({ player: { carried: T.pulse_cost }, shades: [{ id: 'S1', pos: [3, 1, 0] }] }),
     inputs: { frames: [{ tick: 0, pulse: true }] },
   });
   const ss = snaps(r.lines);
   assert.equal(ss[n].shades[0].state, 'stunned');
-  assert.equal(ss[n + 1].shades[0].state, 'chase');
+  // TICKET-03 [THAY THẾ]: hết choáng thì về wander trước, tick sau mới phát hiện lại người chơi (≤ 12 m) → chase
+  assert.equal(ss[n + 1].shades[0].state, 'wander');
+  assert.equal(ss[n + 2].shades[0].state, 'chase');
 });
 
 test('R-06 Bóng Mực chạm → mất lửa, rơi đom đóm theo hit_drop_ratio, bất tử invuln_s', () => {
@@ -152,19 +154,18 @@ test('R-07 thua khi trời sáng (dawn)', () => {
   assert.equal(end(r.lines).ticks, 60);
 });
 
-test('R-07 thắng khi thắp đủ 5 đèn (all_lit) + điểm thưởng thời gian/lửa', () => {
-  const lit = ['L1', 'L2', 'L3', 'L4'].map((id) => ({ id, lit: true, deposited: T.lantern_cost }));
+// TICKET-03 [THAY THẾ]: không còn thắng ngay khi thắp đủ đèn (all_lit bị bỏ).
+// Test cũ được thay bằng: thắp đủ đèn KHÔNG kết thúc đêm; thắng/thua ở bình minh nằm trong tests/phase3.test.js (P3-11).
+test('R-07 thắp đủ 5 đèn không còn kết thúc Đêm (Ticket-03)', () => {
+  const lit = ['L1', 'L2', 'L3', 'L4'].map((id) => ({ id, lit: true }));
   const r = runHeadless({
     ticks: 10,
-    scenario: cleanScenario({ player: { pos: [0, 0, 0], carried: 1, flames: 3 }, time_left_s: 100, lanterns: [...lit, { id: 'L5', pos: [0, 0, 1], deposited: T.lantern_cost - 1 }] }),
+    scenario: cleanScenario({ player: { pos: [0, 0, 0], carried: 1 }, lanterns: [...lit, { id: 'L5', pos: [0, 0, 1], deposited: T.lantern_cost - 1 }] }),
     inputs: { frames: [{ tick: 0, interact: true }] },
   });
-  assert.deepEqual(events(r.lines, 'game_over')[0].data, { result: 'won', reason: 'all_lit' });
-  const timeLeft = Math.floor(100 - 1 / 60);
-  assert.deepEqual(end(r.lines), {
-    type: 'end', ticks: 1, state: 'won',
-    score: T.score.per_mote + T.score.per_lantern + T.score.per_second_left * timeLeft + T.score.per_flame_left * 3,
-  });
+  assert.equal(events(r.lines, 'lantern_lit').length, 1);
+  assert.equal(events(r.lines, 'game_over').length, 0);
+  assert.equal(end(r.lines).state, 'playing');
 });
 
 test('R-08 Bóng Mực không vào safe_radius của đèn đã thắp', () => {

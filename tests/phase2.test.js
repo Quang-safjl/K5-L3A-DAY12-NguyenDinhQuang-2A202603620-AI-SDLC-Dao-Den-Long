@@ -9,19 +9,21 @@ const near = (a, b, eps = 0.02) => Math.abs(a - b) <= eps;
 
 test('P2-01 contract v1.1: tuning khớp số chuẩn Ticket-02', () => {
   const c = JSON.parse(readFileSync(join(ROOT, 'game.contract.json'), 'utf8'));
-  assert.equal(c.contract_version, '1.1');
+  // TICKET-03: contract nâng lên 1.2 (tương thích ngược các khóa v1.1)
+  assert.ok(['1.1', '1.2'].includes(c.contract_version));
   const want = {
     player_speed: 6, carry_capacity: 10, lantern_cost: 10, pickup_radius: 1, interact_radius: 2, pulse_cost: 3, pulse_radius: 5,
     pulse_cooldown_s: 3, pulse_push_m: 4, pulse_stun_s: 2, safe_radius: 6, shade_speed: 4, shade_hit_radius: 1, flames: 3,
-    invuln_s: 1.5, hit_drop_ratio: 0.5, night1_duration_s: 300, night2_duration_s: 330, night3_duration_s: 360,
+    invuln_s: 1.5, hit_drop_ratio: 0.5, // TICKET-03 [THAY THẾ]: thời lượng đêm & điểm đổi → kiểm ở P3-01
     dash_speed: 14, dash_duration_s: 0.2, dash_cooldown_s: 1.5, fall_enabled: true, lantern_count_night1: 5,
   };
   for (const [k, v] of Object.entries(want)) assert.equal(c.tuning[k], v, k);
-  assert.deepEqual(c.tuning.score, { per_mote: 10, per_lantern: 100, per_stun: 5, per_second_left: 2, per_flame_left: 50 });
+
 });
 
 test('P2-02 --night 1|2|3: snapshot có night, wind, player mở rộng, mảng motes/drifters/charms; night_start', () => {
-  for (const [n, lanterns, dur] of [[1, 5, 300], [2, 6, 330], [3, 7, 360]]) {
+  // TICKET-03: thời lượng đêm đọc từ tuning (240/270/300)
+  for (const [n, lanterns, dur] of [[1, 5, T.night1_duration_s], [2, 6, T.night2_duration_s], [3, 7, T.night3_duration_s]]) {
     const r = runHeadless({ night: n, ticks: 10 });
     assert.equal(r.code, 0);
     const s = r.lines[0];
@@ -249,14 +251,14 @@ test('P2-20 Đêm 3 gió mạnh: mỗi 30 s một cơn 5 s, đẩy người chơ
   assert.ok(near(Math.hypot(p1[0] - p0[0], p1[2] - p0[2]), 2 * 300 / 60, 0.1));
 });
 
-test('P2-21 Nạp đèn: chọn đèn chưa sáng gần nhất, bằng nhau thì id nhỏ hơn; điểm +10/đom đóm nạp', () => {
+test('P2-21 Nạp đèn: chọn đèn chưa sáng gần nhất, bằng nhau thì id nhỏ hơn; điểm theo per_mote mỗi đom đóm nạp', () => {
   const r = runHeadless({
     ticks: 2,
     scenario: cleanScenario({ player: { pos: [0, 0, 0], carried: 4 }, lanterns: [{ id: 'L1', pos: [1, 0, 0] }, { id: 'L2', pos: [-1, 0, 0] }] }),
     inputs: { frames: [{ tick: 0, interact: true }] },
   });
   assert.deepEqual(events(r.lines, 'deposit')[0].data, { lantern_id: 'L1', amount: 4, deposited: 4 });
-  assert.equal(end(r.lines).score, 40);
+  assert.equal(end(r.lines).score, 4 * T.score.per_mote); // TICKET-03: +5/đom đóm nạp (trước +10)
 });
 
 test('P2-22 Hiệu năng: một Đêm đầy đủ 21600 tick < 30 s', () => {
