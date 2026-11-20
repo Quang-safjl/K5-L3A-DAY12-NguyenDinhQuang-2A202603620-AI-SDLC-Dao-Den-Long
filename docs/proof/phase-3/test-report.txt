@@ -1,0 +1,111 @@
+# Kết quả kiểm chứng phase-3
+code commit (lần sửa cuối của src, headless.js, contract, tests): 5b25e2e
+node: v22.23.5 · Linux x86_64
+
+## 1. Unit + scenario test (node --test) — Phase 1–2 (regression) + Phase 3
+ok 1 - R-01 contract: snapshot tick 0 đầu tiên, end cuối, đúng số tick, snapshot mỗi 10 tick
+ok 2 - R-01 --snapshot-every tùy chỉnh và time_left_s = thời lượng - bước/60
+ok 3 - R-02 di chuyển: player_speed m/s theo hướng camera, vector dài được chuẩn hóa
+ok 4 - R-02 frame chỉ đổi trường có mặt; trường vắng giữ giá trị cũ
+ok 5 - R-03 nhặt đom đóm trong pickup_radius, không nhặt ngoài bán kính
+ok 6 - R-03 không mang quá carry_capacity
+ok 7 - R-04 nạp đèn: deposit từng phần rồi lantern_lit khi đủ lantern_cost
+ok 8 - R-04 interact chỉ kích hoạt khi false→true; ngoài interact_radius thì không nạp
+ok 9 - R-05 tỏa sáng: tốn pulse_cost, làm choáng + đẩy Bóng Mực trong pulse_radius
+ok 10 - R-05 không đủ ánh sáng thì không tỏa sáng; có cooldown
+ok 11 - R-05 hết choáng sau pulse_stun_s thì về wander rồi đuổi tiếp
+ok 12 - R-06 Bóng Mực chạm → mất lửa, rơi đom đóm theo hit_drop_ratio, bất tử invuln_s
+ok 13 - R-07 thua khi hết lửa (no_flames), mô phỏng dừng sớm
+ok 14 - R-07 thua khi trời sáng (dawn)
+ok 15 - R-07 thắp đủ 5 đèn không còn kết thúc Đêm (Ticket-03)
+ok 16 - R-08 Bóng Mực không vào safe_radius của đèn đã thắp
+ok 17 - R-09 dựng scenario không phát sự kiện, không cộng điểm
+ok 18 - R-10 tính tất định: cùng seed → output giống hệt; khác seed → khác
+ok 19 - R-11 inputs/scenario sai định dạng → mã thoát 2, lỗi ra stderr
+ok 20 - R-12 tọa độ làm tròn 3 chữ số thập phân
+ok 21 - P2-01 contract v1.1: tuning khớp số chuẩn Ticket-02
+ok 22 - P2-02 --night 1|2|3: snapshot có night, wind, player mở rộng, mảng motes/drifters/charms; night_start
+ok 23 - P2-03 Lướt: 14 m/s trong 0.2 s, hồi chiêu 1.5 s tính từ lúc bắt đầu, event dash
+ok 24 - P2-04 Nhảy 7 m/s, trọng lực 20: đỉnh ≈ 1.225 m, chỉ nhảy khi chạm đất
+ok 25 - P2-05 Nhặt: XZ ≤ 1.0 và chênh cao ≤ 1.5
+ok 26 - P2-06 Rơi khỏi đảo: -1 lửa, mất hết đom đóm (lost), chờ 60 tick, hồi sinh ở điểm xuất phát, bất tử 90 tick
+ok 27 - P2-07 Rơi khi còn 1 lửa → thua no_flames ngay
+ok 28 - P2-08 Lịch sinh Bóng Mực Đêm 1: 2 con ở tick 300 (trạng thái spawning), mỗi 480 tick, tối đa 6, cách người chơi ≥ 15 m
+ok 29 - P2-09 Bóng Mực: wander khi xa, chase trong 12 m, recoil 2 m sau khi đánh trúng
+ok 30 - P2-10 Bị đánh: rơi floor(mang/2) đom đóm (kind dropped, ttl 8 s) quanh vành 1.5–2.5 m, nhặt lại được
+ok 31 - P2-11 Vùng an toàn 6 m: Bóng đang ở trong bị đẩy ra mép trong ≤ 30 tick, không gây sát thương
+ok 32 - P2-12 Tỏa Sáng chuẩn: tốn 3, 3D ≤ 5 m từ chân+0.8, choáng 120 tick, +5 điểm/con (kể cả đang choáng)
+ok 33 - P2-13 Gió Lạc: chase khi mang ≥5 và ≤15 m, cướp min(3, mang), flee 240 tick rồi biến mất
+ok 34 - P2-14 Tỏa Sáng trúng Gió Lạc: chase → flee không cướp; flee có đồ → thả lại thành đom đóm rơi
+ok 35 - P2-15 Bùa Gió: nhặt như đom đóm, 600 tick tốc độ 7.2 m/s, lướt không hồi chiêu, xuất hiện lại sau 2700 tick
+ok 36 - P2-16 Tạm dừng: tick tăng, sim_tick/thời gian/hồi chiêu đứng yên, state paused, paused/resumed
+ok 37 - P2-17 Đêm 2 bục nhảy: bắn 24 m/s về đảo kia, đáp trong đảo đích sau ≈1.4 s, không rơi
+ok 38 - P2-18 Đêm 2: đi qua cầu tre an toàn, bước ra khỏi cầu thì rơi
+ok 39 - P2-19 Đêm 3: vách tầng không đi lên được; dốc 30° đưa lên tầng 1 (Y=3); bục (0,3,13) đáp tầng 2
+ok 40 - P2-20 Đêm 3 gió mạnh: mỗi 30 s một cơn 5 s, đẩy người chơi 2 m/s
+ok 41 - P2-21 Nạp đèn: chọn đèn chưa sáng gần nhất, bằng nhau thì id nhỏ hơn; điểm theo per_mote mỗi đom đóm nạp
+ok 42 - P2-22 Hiệu năng: một Đêm đầy đủ 21600 tick < 30 s
+ok 43 - P2-23 Tính tất định cả 3 đêm
+ok 44 - P3-01 contract v1.2: khóa mới và thời lượng đêm 240/270/300
+ok 45 - P3-02 Dầu hao 1/giây; snapshot fuel 1 chữ số, ever_lit, relit_count; đèn tắt fuel 0; lit không fuel → 100
+ok 46 - P3-03 Hết dầu: lantern_out, tắt, deposited = 0, ever_lit vẫn true
+ok 47 - P3-04 Châm dầu: used = min(mang, ceil((100−fuel)/10)), fuel tối đa 100, +5/đom đóm
+ok 48 - P3-05 Đèn đầy dầu không được chọn; chọn đèn nhận được gần nhất (chưa sáng hoặc chưa đầy)
+ok 49 - P3-06 Thắp lại: đèn ever_lit chỉ cần 5, lantern_lit relight:true, +40, relit_count, sức chứa +2
+ok 50 - P3-07 Sức chứa = 10 + 2 × successful_lights, tối đa 20; đèn đặt sẵn không tính
+ok 51 - P3-08 fuel < 30 mất vùng an toàn: Bóng Mực vào được và đánh trúng
+ok 52 - P3-09 Bóng wander đi tới đèn yếu gần nhất, ≤ 2 m thì drain: đứng yên, hút 5/s (+ hao 1/s), fuel_drain mỗi 60 tick, đèn tắt → wander
+ok 53 - P3-10 Hai Bóng hút cùng đèn thì cộng dồn
+ok 54 - P3-11 drain → chase khi Mây trong 6 m; Tỏa Sáng trúng Bóng đang drain: +15, stunned; hết choáng → wander
+ok 55 - P3-12 Châm dầu lên ≥ 30 khi Bóng đang trong vùng: bị đẩy ra mép 6 m trong ≤ 30 tick, không sát thương
+ok 56 - P3-13 Bình minh: còn sống + ≥ ceil(0.6×tổng) đèn sáng → won dawn_survived; điểm 50+floor(fuel)/đèn + 50/lửa; thiếu → lost dawn
+ok 57 - P3-14 Hết Ngọn Lửa ở đúng tick bình minh vẫn thua no_flames
+ok 58 - P3-15 Đèn tắt đúng tick bình minh không được tính (tắt ngay sau bước 2)
+# tests 58
+# pass 58
+# fail 0
+
+## 2. Tính tất định (seed 42, 4000 tick, chạy 2 lần mỗi đêm)
+Đêm 1: giống hệt ✅
+Đêm 2: giống hệt ✅
+Đêm 3: giống hệt ✅
+
+## 3. Bot chơi trọn đêm (inputs → headless.js thật)
+### 3a. Bản đồ không có kẻ địch (scenarios/calm.scenario.json): chứng minh giữ được đủ đèn tới bình minh
+Đêm 1: {"type":"end","ticks":14400,"state":"won","score":1548} · lantern_lit=8
+Đêm 2: {"type":"end","ticks":16200,"state":"won","score":1464} · lantern_lit=8
+Đêm 3: {"type":"end","ticks":18000,"state":"lost","score":880} · lantern_lit=6
+### 3b. Đầy đủ kẻ địch (bot đơn giản, số liệu chuẩn)
+Đêm 1: {"type":"end","ticks":14400,"state":"lost","score":640} · lantern_lit=4
+Đêm 2: {"type":"end","ticks":16200,"state":"lost","score":545} · lantern_lit=2
+Đêm 3: {"type":"end","ticks":3498,"state":"lost","score":30} · lantern_lit=0
+
+## 4. Đứng yên không làm gì (phải thua)
+Đêm 1: {"type":"event","tick":14400,"name":"game_over","data":{"result":"lost","reason":"dawn"}}
+Đêm 2: {"type":"event","tick":16200,"name":"game_over","data":{"result":"lost","reason":"dawn"}}
+Đêm 3: {"type":"event","tick":18000,"name":"game_over","data":{"result":"lost","reason":"dawn"}}
+
+## 5. Hiệu năng headless: một Đêm đầy đủ (yêu cầu ≤ 30 s)
+Đêm 1: {"type":"end","ticks":14400,"state":"lost","score":0} trong 156 ms
+Đêm 2: {"type":"end","ticks":16200,"state":"lost","score":0} trong 161 ms
+Đêm 3: {"type":"end","ticks":18000,"state":"lost","score":0} trong 221 ms
+
+## 6. Kiểm thử giao diện (scripts/ui_smoke.py, Chrome headless, three.js giả)
+PASS Menu chính hiện
+PASS Giới thiệu Đêm 1
+PASS Đi được (W)
+PASS HUD: đồng hồ, đèn k/n, thanh 10 ô
+PASS Tạm dừng: menu hiện, logic đứng yên — sim_tick 73→73
+PASS Cài đặt được lưu (localStorage)
+PASS Tiếp tục chơi
+PASS Thắng Đêm 1 ở bình minh → màn kết quả
+PASS Sang Đêm 2
+PASS Sang Đêm 3
+PASS Thắng Đêm 3 → Bình Minh + tổng điểm — Tổng điểm: 3132
+PASS Thua (rơi khi còn 1 lửa) → chơi lại Đêm, không có Đêm kế
+PASS Chơi lại đúng Đêm 1
+PASS Chế độ mù màu được lưu và áp dụng
+PASS HUD sức chứa = 10 + 2×thắp (14 ô) — 0/14
+PASS Nhắc châm dầu ở đèn yếu — E — Châm dầu (19/100)
+PASS Không có lỗi JavaScript
+17/17 PASS

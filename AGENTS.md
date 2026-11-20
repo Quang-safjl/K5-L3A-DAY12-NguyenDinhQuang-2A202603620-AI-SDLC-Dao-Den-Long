@@ -1,6 +1,6 @@
 # AGENTS.md — Đảo Đèn Lồng
 
-Game 3D (Three.js) + chế độ headless theo **Test Contract v1.1** (3 Đêm). JavaScript ESM, Node >= 18, không có dependency npm.
+Game 3D (Three.js) + chế độ headless theo **Test Contract v1.2** (3 Đêm, đèn có dầu, thắng ở bình minh). JavaScript ESM, Node >= 18, không có dependency npm.
 
 ## Lệnh
 - Test: `npm test` (= `node --test`). Phải xanh trước khi kết thúc bất kỳ việc nào.
@@ -11,6 +11,7 @@ Game 3D (Three.js) + chế độ headless theo **Test Contract v1.1** (3 Đêm).
 
 ## Kiến trúc
 - `src/sim.js`: TOÀN BỘ luật chơi, thuần, tất định. Không dùng `Math.random`, `Date`, DOM. Thứ tự 12 bước/tick theo Ticket-02 (có comment đánh số).
+- Dầu đèn: số nguyên `fuelU` (1/60), KHÔNG dùng số thực tích lũy; vùng an toàn = `hasZone()` (lit && fuel ≥ 30), không dùng `l.lit` trực tiếp. Xem docs/adr/.
 - `src/maps.js`: bản đồ chuẩn 3 đêm (`ground(x,z)` trả độ cao mặt đất hoặc null = vực).
 - `headless.js`: CLI, parse/validate, ghi JSONL. Không chứa luật chơi.
 - `src/game3d.js`: chỉ hiển thị + đọc phím. Không chứa luật chơi.
@@ -25,3 +26,4 @@ Game 3D (Three.js) + chế độ headless theo **Test Contract v1.1** (3 Đêm).
 - Ticket mới đổi luật cũ: sửa test cũ kèm comment `TICKET-0N:` + lý do, ghi bảng "Thay đổi" trong `docs/notes/phase-N.md`.
 - Bot `scripts/autoplay.js` là công cụ bằng chứng, không phải luật; đừng sửa sim để bot thắng.
 - Input UI: dùng cả `keys` (đang giữ) và `tapped` (đã nhấn) để không mất cú nhấn nhanh; muốn tạo cạnh pause khi đang dừng phải gửi 1 bước pause=false trước.
+- Change request phá luật cũ: viết ADR trong `docs/adr/`, ghi breaking change vào `CHANGELOG.md`.

@@ -24,22 +24,23 @@ Không cần `npm install` (không có dependency).
 | F | Tỏa sáng (xua Bóng Mực, Gió Lạc) |
 | Esc / P | Tạm dừng (Tiếp tục / Chơi lại Đêm / Cài đặt / Về menu) |
 
-## Luật & cách tính điểm (số chuẩn Ticket-02, xem `game.contract.json`)
-- 3 Đêm: **Đảo Bến** (5 đèn, 5 phút) → **Đảo Cau** (2 đảo nối cầu tre, bục nhảy, 6 đèn, 5:30) → **Đảo Chuông** (3 tầng, dốc, bục, gió mạnh, 7 đèn, 6 phút). Thắng Đêm 3 → màn Bình Minh với tổng điểm.
-- Mang tối đa 10 đom đóm; mỗi đèn cần 10, nạp nhiều lần được. Đèn đã sáng tạo vùng an toàn 6 m.
-- Tỏa Sáng tốn 3 đom đóm: Bóng Mực trong 5 m choáng 2 s, bị đẩy lùi 4 m. Hồi 3 s. Lướt 14 m/s trong 0.2 s, hồi 1.5 s.
-- Bóng Mực chạm: mất 1 Ngọn Lửa (có 3), rơi một nửa đom đóm ra đất (nhặt lại trong 8 s). Rơi khỏi đảo: mất 1 lửa + toàn bộ đom đóm, hồi sinh sau 1 s.
-- Gió Lạc (Đêm 2–3) cướp 3 đom đóm khi bạn mang ≥ 5; Tỏa Sáng trúng nó lúc đang chạy trốn thì nó thả lại. Bùa Gió: 10 s chạy 7.2 m/s và lướt không hồi chiêu.
-- Điểm: +10 mỗi đom đóm **nạp**, +100 mỗi đèn, +5 mỗi Bóng Mực trúng Tỏa Sáng; thắng +2 × giây còn lại + 50 × lửa còn lại. Tổng điểm = tổng các Đêm đã thắng.
+## Luật & cách tính điểm (Ticket-03, xem `game.contract.json` v1.2)
+- 3 Đêm: **Đảo Bến** (5 đèn, 4 phút) → **Đảo Cau** (2 đảo, cầu tre, bục nhảy, 6 đèn, 4:30) → **Đảo Chuông** (3 tầng, gió mạnh, 7 đèn, 5 phút).
+- **Mục tiêu: giữ đảo sáng tới bình minh.** Hết giờ mà còn sống và ≥ 60% đèn đang sáng (3/5, 4/6, 5/7) thì thắng; thắp đủ đèn không kết thúc sớm.
+- Đèn sáng có **dầu 100**, hao 1/giây. Đứng cạnh đèn bấm **E** để thắp (10 đom đóm; đèn từng sáng chỉ cần 5) hoặc **châm dầu** (mỗi đom đóm +10). Dầu dưới 30: đèn nhấp nháy và **mất vùng an toàn**, Bóng Mực tới hút dầu (5/giây).
+- Sức chứa đom đóm: 10 + 2 cho mỗi lần thắp thành công (tối đa 20).
+- Tỏa Sáng (F, tốn 3): choáng Bóng Mực trong 5 m. Lướt (Shift). Gió Lạc cướp đom đóm, Bùa Gió tăng tốc.
+- Điểm: +5 mỗi đom đóm nạp, +100 thắp lần đầu, +40 thắp lại, +5 mỗi Bóng trúng Tỏa Sáng (+15 nếu nó đang hút dầu); thắng: mỗi đèn sáng +50 + dầu còn lại, mỗi Ngọn Lửa +50.
+- Cài đặt có **Bảng màu dễ phân biệt** cho người mù màu.
 
 ## Test & headless
 ```bash
-npm test                                   # 43 test (gọi headless.js thật)
-bash scripts/proof.sh phase-2              # sinh bằng chứng vào docs/proof/phase-2
+npm test                                   # 58 test (gọi headless.js thật)
+bash scripts/proof.sh phase-3              # sinh bằng chứng vào docs/proof/phase-3
 python3 scripts/ui_smoke.py                # (tùy chọn, cần playwright) kiểm thử luồng giao diện
 node headless.js --seed 1 --night 2 --ticks 600 --out out.jsonl
 ```
-Test Contract v1.1: [game.contract.json](game.contract.json) — số chuẩn của Ticket-02.
+Test Contract v1.2: [game.contract.json](game.contract.json). Thay đổi phá tương thích: [CHANGELOG.md](CHANGELOG.md) · Quyết định thiết kế: [docs/adr/](docs/adr/0001-lantern-fuel-and-dawn-win.md)
 
 ## Cấu trúc
 ```
@@ -64,6 +65,6 @@ AGENTS.md, CLAUDE.md, .claude/   harness AI
 - Chỉ ở phần hiển thị, không đổi output headless (test vẫn xanh).
 
 ## Tài liệu
-- Giả định & tiêu chí: [Phase 1](docs/notes/phase-1.md) · [Phase 2](docs/notes/phase-2.md)
-- Bằng chứng: [Phase 1](docs/proof/phase-1/README.md) · [Phase 2](docs/proof/phase-2/README.md)
+- Giả định & tiêu chí: [Phase 1](docs/notes/phase-1.md) · [Phase 2](docs/notes/phase-2.md) · [Phase 3](docs/notes/phase-3.md)
+- Bằng chứng: [Phase 1](docs/proof/phase-1/README.md) · [Phase 2](docs/proof/phase-2/README.md) · [Phase 3](docs/proof/phase-3/README.md)
 - Nhật ký AI: [docs/notes/ai-log.md](docs/notes/ai-log.md)

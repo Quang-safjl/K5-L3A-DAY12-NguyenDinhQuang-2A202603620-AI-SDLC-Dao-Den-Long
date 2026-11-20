@@ -34,3 +34,19 @@ Công cụ: Claude (claude.ai, có tool chạy code), model Claude Opus. Harness
 5. Bot đi qua cầu dao động quanh điểm vào cầu và bước khỏi cầu khi đã ở nửa đảo B → sửa bot (không sửa luật).
 
 **Token / chi phí ước tính Phase 2:** khoảng 250–300k token (đọc ảnh ticket ~40k, viết sim/test ~100k, UI + kiểm thử ~100k). Tiết kiệm: đọc ảnh ticket một lần rồi chép ra file; test chạy CLI thật nên không phải đoán; dừng cải thiện bot sau 2 lần thử và ghi trung thực thay vì đốt thêm token.
+
+## Phase 3
+| Việc | Cách làm |
+|---|---|
+| Đọc ticket | Người dùng dán text → không tốn token đọc ảnh |
+| Thiết kế | ADR 0001 trước khi sửa: dầu số nguyên 1/60, `hasZone()` thay mọi chỗ dùng `lit` cho vùng an toàn |
+| Build | Sửa sim bằng thay thế có kiểm tra (assert chuỗi tồn tại) để không sửa nhầm chỗ |
+| Verify | Chạy test cũ trước: đúng 4 test đỏ đều thuộc luật [THAY THẾ] → xác nhận phạm vi thay đổi; viết 15 test P3 |
+
+**Lỗi AI / test sai đã gặp**
+1. Test P3-08 ban đầu chạy 60 tick nhưng Bóng 4 m/s cần 120 tick để tới → đọc snapshot thật, sửa test (không sửa game).
+2. Test fuel_drain kỳ vọng tick 60, thực tế 61 vì drain bắt đầu ở tick 1 → ghi giả định 3, sửa test.
+3. Hết choáng chuyển wander nhưng cùng tick lại sang chase (do rơi xuống nhánh wander) → snapshot không bao giờ thấy `wander`; sửa sim để tick chuyển trạng thái dừng ở `wander`.
+4. Test R-05 Phase 1 vỡ sau khi đổi luật hết choáng → cập nhật có comment TICKET-03.
+
+**Token Phase 3:** ~120–150k (ticket dạng text rẻ hơn nhiều so với ảnh Phase 2). Tiết kiệm: ADR trước, sửa nhắm đúng chỗ, tái dùng cơ chế đẩy-ra-vùng-an-toàn của Phase 2 thay vì viết mới.
