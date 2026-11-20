@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Chế độ headless theo Test Contract v1.1
+// Chế độ headless theo Test Contract v1.2
 // node headless.js --seed <int> --night 1|2|3 [--scenario f.json] [--inputs f.json]
 //                  --ticks <int> --out f.jsonl [--snapshot-every <int>]
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -69,13 +69,13 @@ export function validateScenario(sc) {
   if (sc.player !== undefined) {
     if (typeof sc.player !== 'object') throw new InputError('scenario.player phải là object');
     if (sc.player.pos !== undefined && !isVec3(sc.player.pos)) throw new InputError('scenario.player.pos phải là [x,y,z]');
-    for (const k of ['carried', 'flames', 'invuln_ticks', 'dash_cd_ticks', 'pulse_cd_ticks', 'charm_ticks']) if (sc.player[k] !== undefined && !(Number.isInteger(sc.player[k]) && sc.player[k] >= 0)) throw new InputError(`scenario.player.${k} phải là số nguyên >= 0`);
+    for (const k of ['carried', 'flames', 'invuln_ticks', 'dash_cd_ticks', 'pulse_cd_ticks', 'charm_ticks', 'successful_lights']) if (sc.player[k] !== undefined && !(Number.isInteger(sc.player[k]) && sc.player[k] >= 0)) throw new InputError(`scenario.player.${k} phải là số nguyên >= 0`);
   }
   for (const k of ['random_motes', 'random_shades', 'random_drifters', 'wind_enabled']) if (sc[k] !== undefined && typeof sc[k] !== 'boolean') throw new InputError(`scenario.${k} phải là boolean`);
   if (sc.time_left_s !== undefined && !(isNum(sc.time_left_s) && sc.time_left_s >= 0)) throw new InputError('scenario.time_left_s phải là số >= 0');
   for (const k of ['motes', 'shades', 'lanterns', 'drifters', 'charms']) if (sc[k] !== undefined && !Array.isArray(sc[k])) throw new InputError(`scenario.${k} phải là mảng`);
   (sc.motes || []).forEach((m, i) => { if (!isVec3(m) && !(m && isVec3(m.pos))) throw new InputError(`scenario.motes[${i}] phải là [x,y,z] hoặc {pos}`); });
-  const SHADE_STATES = ['spawning', 'wander', 'chase', 'recoil', 'stunned'];
+  const SHADE_STATES = ['spawning', 'wander', 'chase', 'recoil', 'stunned', 'drain'];
   (sc.drifters || []).forEach((d, i) => {
     if (!d || !isVec3(d.pos)) throw new InputError(`scenario.drifters[${i}].pos phải là [x,y,z]`);
     if (d.state !== undefined && !['idle', 'chase', 'flee'].includes(d.state)) throw new InputError(`scenario.drifters[${i}].state không hợp lệ`);
@@ -94,6 +94,8 @@ export function validateScenario(sc) {
     if (!l || typeof l.id !== 'string') throw new InputError(`scenario.lanterns[${i}].id phải là chuỗi`);
     if (l.pos !== undefined && !isVec3(l.pos)) throw new InputError(`scenario.lanterns[${i}].pos phải là [x,y,z]`);
     if (l.lit !== undefined && typeof l.lit !== 'boolean') throw new InputError(`scenario.lanterns[${i}].lit phải là boolean`);
+    if (l.fuel !== undefined && !(isNum(l.fuel) && l.fuel >= 0)) throw new InputError(`scenario.lanterns[${i}].fuel phải là số >= 0`);
+    if (l.ever_lit !== undefined && typeof l.ever_lit !== 'boolean') throw new InputError(`scenario.lanterns[${i}].ever_lit phải là boolean`);
     if (l.deposited !== undefined && !(Number.isInteger(l.deposited) && l.deposited >= 0)) throw new InputError(`scenario.lanterns[${i}].deposited phải là số nguyên >= 0`);
   });
 }
