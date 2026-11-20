@@ -8,9 +8,9 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const TUNING = JSON.parse(readFileSync(join(ROOT, 'game.contract.json'), 'utf8')).tuning;
 
 /** Chạy headless thật (qua CLI) và trả về {code, lines, raw, stderr}. */
-export function runHeadless({ seed = 1, ticks, scenario, inputs, every, extra = [] }) {
+export function runHeadless({ seed = 1, night = 1, ticks, scenario, inputs, every, extra = [] }) {
   const dir = mkdtempSync(join(tmpdir(), 'ddl-'));
-  const args = [join(ROOT, 'headless.js'), '--seed', String(seed), '--night', '1', '--ticks', String(ticks), '--out', join(dir, 'out.jsonl')];
+  const args = [join(ROOT, 'headless.js'), '--seed', String(seed), '--night', String(night), '--ticks', String(ticks), '--out', join(dir, 'out.jsonl')];
   if (scenario !== undefined) {
     const p = join(dir, 'sc.json');
     writeFileSync(p, typeof scenario === 'string' ? scenario : JSON.stringify(scenario));
@@ -29,11 +29,11 @@ export function runHeadless({ seed = 1, ticks, scenario, inputs, every, extra = 
   return { code: r.status, lines, raw, stderr: r.stderr };
 }
 
-export const events = (lines, name) => lines.filter((l) => l.type === 'event' && (!name || l.name === name));
+export const events = (lines, name) => lines.filter((l) => l.type === 'event' && (name ? l.name === name : l.name !== 'night_start'));
 export const snaps = (lines) => lines.filter((l) => l.type === 'snapshot');
 export const end = (lines) => lines[lines.length - 1];
 
 /** Scenario sạch: không ngẫu nhiên, không Bóng Mực, không đom đóm. */
 export function cleanScenario(extra = {}) {
-  return { random_motes: false, random_shades: false, motes: [], shades: [], ...extra };
+  return { random_motes: false, random_shades: false, random_drifters: false, wind_enabled: false, motes: [], shades: [], drifters: [], ...extra };
 }

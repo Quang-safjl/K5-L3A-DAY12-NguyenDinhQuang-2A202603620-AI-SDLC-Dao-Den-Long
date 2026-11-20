@@ -1,4 +1,6 @@
 // Test Phase 1 — mỗi test gắn mã yêu cầu (R-xx) trong docs/proof/phase-1/README.md
+// Phase 2 (Ticket-02) thay số liệu & một số luật; các chỗ sửa ghi "TICKET-02:" kèm lý do.
+// Mọi con số đọc từ tuning nên test tự theo số chuẩn mới.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { runHeadless, events, snaps, end, cleanScenario, TUNING as T } from './helpers.js';
@@ -46,7 +48,8 @@ test('R-03 nhặt đom đóm trong pickup_radius, không nhặt ngoài bán kín
   assert.equal(ev.length, 1);
   assert.equal(ev[0].tick, 1);
   assert.deepEqual(ev[0].data, { carried: 1 });
-  assert.equal(end(r.lines).score, T.score.per_mote);
+  // TICKET-02: điểm +10 tính khi NẠP đom đóm, không còn khi nhặt
+  assert.equal(end(r.lines).score, 0);
 });
 
 test('R-03 không mang quá carry_capacity', () => {
@@ -65,7 +68,8 @@ test('R-04 nạp đèn: deposit từng phần rồi lantern_lit khi đủ lanter
   });
   assert.deepEqual(events(r.lines, 'deposit')[0].data, { lantern_id: 'L1', amount: 2, deposited: T.lantern_cost });
   assert.equal(events(r.lines, 'lantern_lit')[0].data.lantern_id, 'L1');
-  assert.equal(end(r.lines).score, T.score.per_lantern);
+  // TICKET-02: +per_mote cho mỗi đom đóm nạp
+  assert.equal(end(r.lines).score, 2 * T.score.per_mote + T.score.per_lantern);
 });
 
 test('R-04 interact chỉ kích hoạt khi false→true; ngoài interact_radius thì không nạp', () => {
@@ -84,8 +88,9 @@ test('R-04 interact chỉ kích hoạt khi false→true; ngoài interact_radius 
 });
 
 test('R-05 tỏa sáng: tốn pulse_cost, làm choáng + đẩy Bóng Mực trong pulse_radius', () => {
+  // TICKET-02: đẩy lùi chia đều trong 15 tick đầu (trước đây đẩy tức thời)
   const r = runHeadless({
-    ticks: 1, every: 1,
+    ticks: 15, every: 15,
     scenario: cleanScenario({ player: { pos: [0, 0, 0], carried: T.pulse_cost }, shades: [{ id: 'S1', pos: [3, 1, 0] }, { id: 'S2', pos: [T.pulse_radius + 3, 1, 0] }] }),
     inputs: { frames: [{ tick: 0, pulse: true }] },
   });
@@ -101,12 +106,13 @@ test('R-05 tỏa sáng: tốn pulse_cost, làm choáng + đẩy Bóng Mực tron
 test('R-05 không đủ ánh sáng thì không tỏa sáng; có cooldown', () => {
   const poor = runHeadless({ ticks: 3, scenario: cleanScenario({ player: { carried: T.pulse_cost - 1 } }), inputs: { frames: [{ tick: 0, pulse: true }] } });
   assert.equal(events(poor.lines, 'pulse').length, 0);
+  const CD = Math.round(T.pulse_cooldown_s * 60);
   const cd = runHeadless({
-    ticks: 80,
+    ticks: CD + 10,
     scenario: cleanScenario({ player: { carried: 10 } }),
-    inputs: { frames: [{ tick: 0, pulse: true }, { tick: 1, pulse: false }, { tick: 10, pulse: true }, { tick: 11, pulse: false }, { tick: 70, pulse: true }] },
+    inputs: { frames: [{ tick: 0, pulse: true }, { tick: 1, pulse: false }, { tick: 10, pulse: true }, { tick: 11, pulse: false }, { tick: CD, pulse: true }] },
   });
-  assert.deepEqual(events(cd.lines, 'pulse').map((e) => e.tick), [1, 71]);
+  assert.deepEqual(events(cd.lines, 'pulse').map((e) => e.tick), [1, CD + 1]);
 });
 
 test('R-05 hết choáng sau pulse_stun_s thì đuổi tiếp', () => {
@@ -157,14 +163,14 @@ test('R-07 thắng khi thắp đủ 5 đèn (all_lit) + điểm thưởng thời
   const timeLeft = Math.floor(100 - 1 / 60);
   assert.deepEqual(end(r.lines), {
     type: 'end', ticks: 1, state: 'won',
-    score: T.score.per_lantern + T.score.per_second_left * timeLeft + T.score.per_flame_left * 3,
+    score: T.score.per_mote + T.score.per_lantern + T.score.per_second_left * timeLeft + T.score.per_flame_left * 3,
   });
 });
 
 test('R-08 Bóng Mực không vào safe_radius của đèn đã thắp', () => {
   const r = runHeadless({
     ticks: 600, every: 10,
-    scenario: cleanScenario({ player: { pos: [0, 0, 0] }, lanterns: [{ ...L1, lit: true, deposited: T.lantern_cost }], shades: [{ id: 'S1', pos: [15, 1, 0] }] }),
+    scenario: cleanScenario({ player: { pos: [0, 0, 0] }, lanterns: [{ ...L1, lit: true, deposited: T.lantern_cost }], shades: [{ id: 'S1', pos: [10, 1, 0] }] }),
   });
   assert.equal(events(r.lines, 'player_hit').length, 0);
   for (const s of snaps(r.lines)) assert.ok(Math.hypot(s.shades[0].pos[0], s.shades[0].pos[2]) >= T.safe_radius - 1e-3);
@@ -183,8 +189,9 @@ test('R-10 tính tất định: cùng seed → output giống hệt; khác seed 
   assert.equal(a.code, 0);
   assert.equal(a.raw, b.raw);
   assert.notEqual(a.raw, c.raw);
-  const sp = runHeadless({ seed: 7, ticks: 2400, scenario: { shades: [] } });
-  assert.deepEqual(events(sp.lines, 'shade_spawned').map((e) => [e.tick, e.data.id]), [[2400, 'S1']]);
+  // TICKET-02: lịch sinh chuẩn — 2 con ở tick 300, rồi mỗi 480 tick (Đêm 1)
+  const sp = runHeadless({ seed: 7, ticks: 780, scenario: { shades: [] } });
+  assert.deepEqual(events(sp.lines, 'shade_spawned').map((e) => [e.tick, e.data.id]), [[300, 'S1'], [300, 'S2'], [780, 'S3']]);
 });
 
 test('R-11 inputs/scenario sai định dạng → mã thoát 2, lỗi ra stderr', () => {
