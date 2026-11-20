@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Chế độ headless theo Test Contract v1.0
-// node headless.js --seed <int> --night 1 [--scenario f.json] [--inputs f.json]
+// Chế độ headless theo Test Contract v1.1
+// node headless.js --seed <int> --night 1|2|3 [--scenario f.json] [--inputs f.json]
 //                  --ticks <int> --out f.jsonl [--snapshot-every <int>]
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createGame, step, snapshot } from './src/sim.js';
+import { createGame, step, snapshot, nightStartEvent } from './src/sim.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 
@@ -58,7 +58,7 @@ export function validateInputs(inp) {
         throw new InputError(`inputs.frames[${i}].move phải là [x, z] trong [-1, 1]`);
     }
     if ('cam_yaw_deg' in f && !isNum(f.cam_yaw_deg)) throw new InputError(`inputs.frames[${i}].cam_yaw_deg phải là số`);
-    for (const b of ['jump', 'interact', 'pulse', 'dash']) {
+    for (const b of ['jump', 'interact', 'pulse', 'dash', 'pause']) {
       if (b in f && typeof f[b] !== 'boolean') throw new InputError(`inputs.frames[${i}].${b} phải là boolean`);
     }
   }
@@ -69,15 +69,26 @@ export function validateScenario(sc) {
   if (sc.player !== undefined) {
     if (typeof sc.player !== 'object') throw new InputError('scenario.player phải là object');
     if (sc.player.pos !== undefined && !isVec3(sc.player.pos)) throw new InputError('scenario.player.pos phải là [x,y,z]');
-    for (const k of ['carried', 'flames']) if (sc.player[k] !== undefined && !(Number.isInteger(sc.player[k]) && sc.player[k] >= 0)) throw new InputError(`scenario.player.${k} phải là số nguyên >= 0`);
+    for (const k of ['carried', 'flames', 'invuln_ticks', 'dash_cd_ticks', 'pulse_cd_ticks', 'charm_ticks']) if (sc.player[k] !== undefined && !(Number.isInteger(sc.player[k]) && sc.player[k] >= 0)) throw new InputError(`scenario.player.${k} phải là số nguyên >= 0`);
   }
-  for (const k of ['random_motes', 'random_shades']) if (sc[k] !== undefined && typeof sc[k] !== 'boolean') throw new InputError(`scenario.${k} phải là boolean`);
+  for (const k of ['random_motes', 'random_shades', 'random_drifters', 'wind_enabled']) if (sc[k] !== undefined && typeof sc[k] !== 'boolean') throw new InputError(`scenario.${k} phải là boolean`);
   if (sc.time_left_s !== undefined && !(isNum(sc.time_left_s) && sc.time_left_s >= 0)) throw new InputError('scenario.time_left_s phải là số >= 0');
-  for (const k of ['motes', 'shades', 'lanterns']) if (sc[k] !== undefined && !Array.isArray(sc[k])) throw new InputError(`scenario.${k} phải là mảng`);
-  (sc.motes || []).forEach((m, i) => { if (!isVec3(m)) throw new InputError(`scenario.motes[${i}] phải là [x,y,z]`); });
+  for (const k of ['motes', 'shades', 'lanterns', 'drifters', 'charms']) if (sc[k] !== undefined && !Array.isArray(sc[k])) throw new InputError(`scenario.${k} phải là mảng`);
+  (sc.motes || []).forEach((m, i) => { if (!isVec3(m) && !(m && isVec3(m.pos))) throw new InputError(`scenario.motes[${i}] phải là [x,y,z] hoặc {pos}`); });
+  const SHADE_STATES = ['spawning', 'wander', 'chase', 'recoil', 'stunned'];
+  (sc.drifters || []).forEach((d, i) => {
+    if (!d || !isVec3(d.pos)) throw new InputError(`scenario.drifters[${i}].pos phải là [x,y,z]`);
+    if (d.state !== undefined && !['idle', 'chase', 'flee'].includes(d.state)) throw new InputError(`scenario.drifters[${i}].state không hợp lệ`);
+  });
+  (sc.charms || []).forEach((c, i) => {
+    if (!c || typeof c !== 'object') throw new InputError(`scenario.charms[${i}] phải là object`);
+    if (c.pos !== undefined && !isVec3(c.pos)) throw new InputError(`scenario.charms[${i}].pos phải là [x,y,z]`);
+  });
   (sc.shades || []).forEach((s, i) => {
     if (!s || !isVec3(s.pos)) throw new InputError(`scenario.shades[${i}].pos phải là [x,y,z]`);
     if (s.id !== undefined && typeof s.id !== 'string') throw new InputError(`scenario.shades[${i}].id phải là chuỗi`);
+    if (s.state !== undefined && !SHADE_STATES.includes(s.state)) throw new InputError(`scenario.shades[${i}].state phải thuộc ${SHADE_STATES.join('/')}`);
+    if (s.state_ticks_left !== undefined && !(Number.isInteger(s.state_ticks_left) && s.state_ticks_left >= 0)) throw new InputError(`scenario.shades[${i}].state_ticks_left phải là số nguyên >= 0`);
   });
   (sc.lanterns || []).forEach((l, i) => {
     if (!l || typeof l.id !== 'string') throw new InputError(`scenario.lanterns[${i}].id phải là chuỗi`);
@@ -94,7 +105,7 @@ function main() {
   const ticks = toInt(a.ticks, '--ticks', 0);
   const every = a['snapshot-every'] !== undefined ? toInt(a['snapshot-every'], '--snapshot-every', 1) : 10;
   const night = a.night !== undefined ? toInt(a.night, '--night', 1) : 1;
-  if (night !== 1) fail(`--night ${night} chưa được hỗ trợ (Phase 1 chỉ có Đêm 1)`, 1);
+  if (![1, 2, 3].includes(night)) fail(`--night phải là 1, 2 hoặc 3`, 1);
 
   const contract = JSON.parse(readFileSync(join(ROOT, 'game.contract.json'), 'utf8'));
   let scenario = null, inputs = { frames: [] };
@@ -106,16 +117,17 @@ function main() {
     throw e;
   }
 
-  const g = createGame({ tuning: contract.tuning, seed, scenario });
+  const g = createGame({ tuning: contract.tuning, seed, night, scenario });
   const lines = [];
   const push = (o) => lines.push(JSON.stringify(o));
   push(snapshot(g));
+  push(nightStartEvent(g));
 
-  const cur = { move: [0, 0], cam_yaw_deg: 0, jump: false, interact: false, pulse: false, dash: false };
+  const cur = { move: [0, 0], cam_yaw_deg: 0, jump: false, interact: false, pulse: false, dash: false, pause: false };
   let fi = 0;
   const frames = inputs.frames;
   let steps = 0;
-  for (let k = 0; k < ticks && g.state === 'playing'; k++) {
+  for (let k = 0; k < ticks && (g.state === 'playing' || g.state === 'paused'); k++) {
     while (fi < frames.length && frames[fi].tick <= k) {
       if (frames[fi].tick === k) Object.assign(cur, frames[fi], { tick: undefined });
       fi++;
