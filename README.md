@@ -24,6 +24,8 @@ Không cần `npm install` (không có dependency).
 | F | Tỏa sáng (xua Bóng Mực, Gió Lạc) |
 | Esc / P | Tạm dừng (Tiếp tục / Chơi lại Đêm / Cài đặt / Về menu) |
 
+**Chọn màn:** menu → *Chọn màn* để chơi thẳng bất kỳ Đêm nào (mở sẵn cả 3, có lưu điểm cao nhất). Máy yếu có thể tắt *Đồ họa cao* trong Cài đặt. Nguồn asset: [CREDITS.md](CREDITS.md).
+
 ## Luật & cách tính điểm (Ticket-03, xem `game.contract.json` v1.2)
 - 3 Đêm: **Đảo Bến** (5 đèn, 4 phút) → **Đảo Cau** (2 đảo, cầu tre, bục nhảy, 6 đèn, 4:30) → **Đảo Chuông** (3 tầng, gió mạnh, 7 đèn, 5 phút).
 - **Mục tiêu: giữ đảo sáng tới bình minh.** Hết giờ mà còn sống và ≥ 60% đèn đang sáng (3/5, 4/6, 5/7) thì thắng; thắp đủ đèn không kết thúc sớm.

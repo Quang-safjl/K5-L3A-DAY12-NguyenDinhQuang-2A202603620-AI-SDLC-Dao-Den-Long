@@ -4,79 +4,118 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Đảo Đèn Lồng</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🏮%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./assets/fonts/fonts.css" />
   <style>
-    :root { --ui: #F5F1E6; --gold: #F2C14E; --danger: #FF5A5F; --lit: #FFB347; --mote: #FFE58A; --panel: rgba(14,20,48,.82); }
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #0E1430; font-family: system-ui, "Segoe UI", sans-serif; color: var(--ui); user-select: none; }
+    :root { --ui: #F5F1E6; --gold: #F2C14E; --danger: #FF5A5F; --lit: #FFB347; --mote: #FFE58A; --panel: rgba(14,20,48,.82);
+      --glass: rgba(20,26,64,.55); --line: rgba(242,193,78,.35); }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #0E1430; font-family: "Be Vietnam Pro", system-ui, "Segoe UI", sans-serif; color: var(--ui); user-select: none; }
     canvas { display: block; }
     .hud { position: fixed; pointer-events: none; font-weight: 600; text-shadow: 0 1px 3px #000; }
-    #hudFlames { top: 14px; left: 16px; font-size: 26px; letter-spacing: 4px; }
-    #hudClock { top: 10px; left: 50%; transform: translateX(-50%); font-size: 30px; font-variant-numeric: tabular-nums; }
+    .chip { background: var(--glass); border: 1px solid var(--line); border-radius: 14px; padding: 6px 14px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+    #hudFlames { top: 14px; left: 16px; font-size: 24px; letter-spacing: 4px; }
+    #hudClock { top: 12px; left: 50%; transform: translateX(-50%); font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
     #hudClock.warn { color: var(--danger); animation: blink .6s steps(2) infinite; }
     body.cb { --danger: #FFFFFF; }
     body.cb #hudClock.warn::before { content: "⚠ "; }
     @keyframes blink { 50% { opacity: .25; } }
-    #hudRight { top: 12px; right: 16px; text-align: right; font-size: 18px; line-height: 1.5; }
-    #hudRight .score { color: var(--gold); font-size: 22px; }
-    #hudBar { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; }
-    #hudBar i { width: 22px; height: 22px; border-radius: 5px; border: 2px solid var(--gold); background: rgba(0,0,0,.35); }
-    #hudBar i.on { background: var(--mote); box-shadow: 0 0 8px var(--mote); }
+    #hudRight { top: 12px; right: 16px; text-align: right; font-size: 17px; line-height: 1.5; }
+    #hudRight small { opacity: .75; font-weight: 400; }
+    #hudRight .score { color: var(--gold); font-size: 22px; font-weight: 800; }
+    #hudBar { bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; align-items: center; }
+    #hudBar i { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--gold); background: rgba(0,0,0,.35); }
+    #hudBar i.on { background: radial-gradient(circle, #FFF6C2 0 35%, var(--mote) 60%, #e0a92c 100%); box-shadow: 0 0 10px var(--mote); }
     #hudCd { bottom: 16px; right: 16px; display: flex; gap: 10px; }
-    .cd { width: 54px; height: 54px; border-radius: 50%; border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 12px; text-align: center; background: rgba(0,0,0,.4); position: relative; overflow: hidden; }
+    .cd { width: 56px; height: 56px; border-radius: 50%; border: 3px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 12px; text-align: center; background: var(--glass); backdrop-filter: blur(6px); position: relative; overflow: hidden; box-shadow: 0 0 14px rgba(242,193,78,.25); }
     .cd .fill { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,90,95,.55); }
     .cd span { position: relative; }
-    #hudPrompt { bottom: 70px; left: 50%; transform: translateX(-50%); font-size: 20px; color: var(--lit); display: none; }
-    #hudInfo { top: 56px; left: 50%; transform: translateX(-50%); font-size: 16px; color: var(--gold); }
+    #hudPrompt { bottom: 72px; left: 50%; transform: translateX(-50%); font-size: 19px; color: var(--lit); display: none; }
+    #hudInfo { top: 64px; left: 50%; transform: translateX(-50%); font-size: 16px; color: var(--gold); }
+    #hudInfo:empty { display: none; }
     #hudArrow { width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 28px solid var(--lit); display: none; filter: drop-shadow(0 0 6px #000); }
     #fps { bottom: 4px; left: 6px; font-size: 11px; opacity: .6; font-weight: 400; }
-    #help { bottom: 22px; left: 16px; font-size: 12px; opacity: .75; font-weight: 400; max-width: 300px; }
-    .screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(14,20,48,.78); text-align: center; gap: 12px; }
-    .screen.show { display: flex; }
-    .screen h1 { font-size: 52px; margin: 0; color: var(--lit); text-shadow: 0 0 18px rgba(255,179,71,.6); }
-    .screen h2 { font-size: 30px; margin: 0; color: var(--gold); }
-    .screen p { max-width: 560px; font-size: 18px; line-height: 1.5; margin: 4px; }
-    button { font: inherit; font-size: 18px; padding: 10px 26px; min-width: 220px; border-radius: 10px; border: 2px solid var(--gold); background: #1B2350; color: var(--ui); cursor: pointer; }
-    button:hover { background: #2a3570; }
+    #help { bottom: 22px; left: 16px; font-size: 12px; opacity: .8; font-weight: 400; max-width: 300px; line-height: 1.5; }
+    .screen { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; gap: 12px; padding: 16px; box-sizing: border-box; overflow-y: auto;
+      background: radial-gradient(ellipse at 50% 35%, rgba(255,179,71,.14), transparent 55%), linear-gradient(180deg, rgba(10,14,38,.55), rgba(10,14,38,.88)); }
+    .screen.show { display: flex; animation: fadeIn .35s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } }
+    .screen h1 { font-family: "Dancing Script", cursive; font-size: 76px; line-height: 1.05; margin: 0 0 4px; color: var(--lit); text-shadow: 0 0 22px rgba(255,179,71,.75), 0 0 60px rgba(255,120,40,.35); }
+    .screen h2 { font-size: 30px; margin: 0; color: var(--gold); font-weight: 800; }
+    .screen p { max-width: 560px; font-size: 18px; line-height: 1.55; margin: 4px; }
+    .lanterns-deco { font-size: 34px; letter-spacing: 18px; filter: drop-shadow(0 0 10px rgba(255,150,40,.8)); animation: sway 3s ease-in-out infinite; transform-origin: top; }
+    @keyframes sway { 50% { transform: rotate(3deg); } }
+    button { font: inherit; font-size: 18px; font-weight: 600; padding: 11px 28px; min-width: 240px; border-radius: 999px; border: 2px solid var(--gold); color: var(--ui); cursor: pointer;
+      background: linear-gradient(180deg, #2a3570, #1B2350); box-shadow: 0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12); transition: transform .12s, box-shadow .12s, background .12s; }
+    button:hover, button:focus-visible { background: linear-gradient(180deg, #8a4b1c, #5a2c12); box-shadow: 0 0 20px rgba(255,179,71,.55), inset 0 1px 0 rgba(255,255,255,.2); transform: translateY(-1px); outline: none; }
+    button.primary { background: linear-gradient(180deg, #e2892f, #b5541c); border-color: #FFD58A; }
     label { font-size: 17px; display: flex; gap: 12px; align-items: center; }
+    .panel { background: var(--glass); border: 1px solid var(--line); border-radius: 20px; padding: 22px 28px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+    input[type=range] { accent-color: var(--lit); width: 180px; }
+    input[type=checkbox] { accent-color: var(--lit); width: 18px; height: 18px; }
+    #levels { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; max-width: 960px; }
+    .level { width: 260px; min-width: 0; padding: 0; border-radius: 18px; overflow: hidden; text-align: left; display: flex; flex-direction: column; border: 2px solid var(--line); background: var(--glass); backdrop-filter: blur(8px); }
+    .level .art { height: 120px; position: relative; display: flex; align-items: flex-end; justify-content: center; font-size: 22px; padding-bottom: 10px; letter-spacing: 4px;
+      background: radial-gradient(circle at 78% 26%, #f7f1d0 0 7%, rgba(247,241,208,.22) 8%, transparent 20%), linear-gradient(180deg, #0b1030 0%, #1d2b5c 68%, #12384A 69%, #0e2c3a 100%); }
+    .level .art .num { position: absolute; top: 6px; left: 14px; font-family: "Dancing Script", cursive; font-size: 30px; letter-spacing: 0; color: var(--lit); text-shadow: 0 0 10px rgba(255,179,71,.8); }
+    .level .body { padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 4px; }
+    .level .name { font-size: 21px; font-weight: 800; color: var(--gold); }
+    .level .meta { font-size: 14px; opacity: .85; font-weight: 400; line-height: 1.5; }
+    .level .best { font-size: 15px; color: var(--mote); }
+    .level.locked { filter: grayscale(.85) brightness(.6); cursor: not-allowed; }
+    .level.locked:hover { transform: none; box-shadow: none; background: var(--glass); }
+    .level .lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 42px; background: rgba(0,0,0,.35); }
+    .level.cleared { border-color: var(--gold); }
     #err { display: none; }
+    @media (max-width: 640px) { .screen h1 { font-size: 52px; } button { min-width: 200px; } #help { display: none; } }
   </style>
   <script type="importmap">
-    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                   "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
   </script>
 </head>
 <body>
-  <div id="hudFlames" class="hud"></div>
-  <div id="hudClock" class="hud"></div>
-  <div id="hudRight" class="hud"></div>
-  <div id="hudInfo" class="hud"></div>
+  <div id="hudFlames" class="hud chip"></div>
+  <div id="hudClock" class="hud chip"></div>
+  <div id="hudRight" class="hud chip"></div>
+  <div id="hudInfo" class="hud chip"></div>
   <div id="hudBar" class="hud"></div>
   <div id="hudCd" class="hud">
     <div class="cd" id="cdDash"><div class="fill"></div><span>Lướt<br>Shift</span></div>
     <div class="cd" id="cdPulse"><div class="fill"></div><span>Tỏa<br>F</span></div>
   </div>
-  <div id="hudPrompt" class="hud"></div>
+  <div id="hudPrompt" class="hud chip"></div>
   <div id="hudArrow" class="hud"></div>
   <div id="help" class="hud">WASD đi · kéo chuột/←→ xoay · Space nhảy · Shift lướt · E nạp đèn · F tỏa sáng · Esc/P tạm dừng</div>
   <div id="fps" class="hud"></div>
 
   <div id="scrMenu" class="screen show">
+    <div class="lanterns-deco">🏮🏮🏮</div>
     <h1>Đảo Đèn Lồng</h1>
     <p>Giúp Mây gom đom đóm, thắp lại các Đèn Lồng Lớn trên ba hòn đảo trước bình minh.</p>
-    <button data-act="start">Bắt đầu</button>
+    <button class="primary" data-act="start">Bắt đầu</button>
+    <button data-act="levels">Chọn màn</button>
     <button data-act="settings">Cài đặt</button>
+  </div>
+  <div id="scrLevels" class="screen">
+    <h2>Chọn màn</h2>
+    <p>Chọn hòn đảo bạn muốn giữ sáng tới bình minh.</p>
+    <div id="levels"></div>
+    <button data-act="menu">Quay lại</button>
   </div>
   <div id="scrIntro" class="screen">
     <h2 id="introTitle"></h2>
     <p id="introText"></p>
-    <button data-act="play">Vào đêm (Enter)</button>
+    <button class="primary" data-act="play">Vào đêm (Enter)</button>
   </div>
   <div id="scrResult" class="screen">
     <h1 id="resTitle"></h1>
     <p id="resText"></p>
-    <button id="resNext" data-act="next">Đêm kế tiếp</button>
+    <button id="resNext" class="primary" data-act="next">Đêm kế tiếp</button>
     <button data-act="retry">Chơi lại Đêm</button>
     <button data-act="menu">Về menu</button>
   </div>
   <div id="scrDawn" class="screen">
+    <div class="lanterns-deco">🌅</div>
     <h1>Bình Minh</h1>
     <p>Ba hòn đảo đã sáng trở lại. Ông Đăng mỉm cười: "Cháu giỏi lắm, Mây."</p>
     <h2 id="dawnScore"></h2>
@@ -91,9 +130,12 @@
   </div>
   <div id="scrSettings" class="screen">
     <h2>Cài đặt</h2>
-    <label>Âm lượng <input id="setVol" type="range" min="0" max="1" step="0.05" /></label>
-    <label>Độ nhạy chuột <input id="setSens" type="range" min="0.05" max="1" step="0.05" /></label>
-    <label><input id="setCb" type="checkbox" /> Bảng màu dễ phân biệt (mù màu)</label>
+    <div class="panel">
+      <label>Âm lượng <input id="setVol" type="range" min="0" max="1" step="0.05" /></label>
+      <label>Độ nhạy chuột <input id="setSens" type="range" min="0.05" max="1" step="0.05" /></label>
+      <label><input id="setCb" type="checkbox" /> Bảng màu dễ phân biệt (mù màu)</label>
+      <label><input id="setHq" type="checkbox" /> Đồ họa cao (mặt nước phản chiếu)</label>
+    </div>
     <button data-act="settingsBack">Xong</button>
   </div>
   <div id="err" class="screen"><p>Không tải được game. Hãy chạy <code>node serve.js</code> rồi mở http://localhost:8000 (cần Internet để tải Three.js).</p></div>

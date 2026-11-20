@@ -8,15 +8,17 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 tmp = Path(tempfile.mkdtemp())
-shutil.copytree(ROOT / 'src', tmp / 'src'); shutil.copy(ROOT / 'game.contract.json', tmp)
+shutil.copytree(ROOT / 'src', tmp / 'src'); shutil.copytree(ROOT / 'assets', tmp / 'assets'); shutil.copy(ROOT / 'game.contract.json', tmp)
 (tmp / 'index.html').write_text((ROOT / 'index.html').read_text(encoding='utf-8').replace(
-    'https://unpkg.com/three@0.160.0/build/three.module.js', '/three-stub.js'), encoding='utf-8')
-names = sorted(set(re.findall(r'THREE\.([A-Za-z0-9]+)', (ROOT / 'src/game3d.js').read_text(encoding='utf-8'))) - {'WebGLRenderer'})
+    'https://unpkg.com/three@0.160.0/build/three.module.js', '/three-stub.js').replace(
+    'https://unpkg.com/three@0.160.0/examples/jsm/', '/addons-stub/'), encoding='utf-8')
+names = sorted(set(re.findall(r'THREE\.([A-Za-z0-9]+)', (ROOT / 'src/game3d.js').read_text(encoding='utf-8'))) - {'WebGLRenderer'} | {'Water'})
 stub = """const H={get(t,p){if(p==='then')return undefined;if(p===Symbol.toPrimitive)return()=>0;if(!(p in t))t[p]=mk();return t[p]},apply(){return mk()},construct(){return mk()},set(t,p,v){t[p]=v;return true}};
 function mk(){return new Proxy(function(){},H)}
 export class WebGLRenderer{constructor(){this.domElement=document.createElement('canvas')}setPixelRatio(){}setSize(){}render(){}}
 """ + ''.join(f'export const {n}=mk();\n' for n in names)
 (tmp / 'three-stub.js').write_text(stub)
+(tmp / 'addons-stub/objects').mkdir(parents=True); (tmp / 'addons-stub/objects/Water.js').write_text("export { Water } from '/three-stub.js';\n")
 class Handler(http.server.SimpleHTTPRequestHandler):
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map, '.js': 'text/javascript'}
     def log_message(self, *a): pass
@@ -41,6 +43,10 @@ with sync_playwright() as p:
     errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.goto(URL); pg.wait_for_timeout(800)
     check('Menu chính hiện', pg.is_visible('#scrMenu'))
+    pg.click('#scrMenu >> text=Chọn màn'); pg.wait_for_timeout(200)
+    lock = pg.eval_on_selector_all('.level', 'e=>e.map(x=>x.disabled)')
+    check('Chọn màn: mới chơi đã mở cả 3 Đêm', pg.is_visible('#scrLevels') and lock == [False, False, False], str(lock))
+    pg.click('#scrLevels >> text=Quay lại'); pg.wait_for_timeout(200)
     pg.click('text=Bắt đầu'); pg.wait_for_timeout(200)
     check('Giới thiệu Đêm 1', 'Đêm 1' in pg.inner_text('#introTitle') and 'Ông Đăng' in pg.inner_text('#introText'))
     pg.keyboard.press('Enter'); pg.wait_for_timeout(200)
@@ -67,6 +73,13 @@ with sync_playwright() as p:
     pg.keyboard.press('Enter'); pg.wait_for_timeout(200); win_now(pg, 6)
     check('Thắng Đêm 3 → Bình Minh + tổng điểm', pg.is_visible('#scrDawn') and 'Tổng điểm' in pg.inner_text('#dawnScore'), pg.inner_text('#dawnScore'))
     pg.click('#scrDawn >> text=Về menu'); pg.wait_for_timeout(200)
+    pg.click('#scrMenu >> text=Chọn màn'); pg.wait_for_timeout(200)
+    lock = pg.eval_on_selector_all('.level', 'e=>e.map(x=>x.disabled)')
+    check('Chọn màn: thắng cả 3 đêm → có điểm cao nhất', lock == [False, False, False] and 'Cao nhất' in pg.inner_text('.level[data-night="3"]'), str(lock))
+    pg.click('.level[data-night="3"]'); pg.wait_for_timeout(200)
+    check('Chọn Đêm 3 → giới thiệu Đêm 3', pg.is_visible('#scrIntro') and 'Đêm 3' in pg.inner_text('#introTitle'))
+    pg.keyboard.press('Enter'); pg.wait_for_timeout(200); pg.keyboard.press('Escape'); pg.wait_for_timeout(300)
+    pg.click('#scrPause >> text=Về menu'); pg.wait_for_timeout(200)
     pg.click('text=Bắt đầu'); pg.wait_for_timeout(200); pg.keyboard.press('Enter'); pg.wait_for_timeout(200)
     pg.evaluate('(()=>{const g=__ddl.game;g.player.flames=1;g.player.pos=[39.5,0,0]})()')
     pg.keyboard.down('KeyA'); pg.wait_for_timeout(1800); pg.keyboard.up('KeyA')

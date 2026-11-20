@@ -13,5 +13,8 @@ Sinh lại: `CHROME=/đường/dẫn/chrome bash scripts/proof.sh phase-3` → [
 | — | Một đêm ≤ 30 s | đo | §5 | ~0.2 s |
 | P3-17 | UI dầu / sức chứa / nhắc | UI smoke + ảnh | §6, screenshots/ | Đạt (smoke) · cần ảnh |
 | P3-18 | Chế độ mù màu | UI smoke + ảnh | §6, screenshots/ | Đạt (lưu & áp dụng) · cần ảnh |
+| UI-01…UI-03 | Chọn màn: mở sẵn cả 3 Đêm, điểm cao nhất, đọc lưu an toàn (ngoài ticket) | tests/ui.test.js | §1 | Đạt |
+| UI-04 | Asset đồ họa có trong repo + ghi nguồn; sim không phụ thuộc phần hiển thị | tests/ui.test.js | §1 | Đạt |
+| UI-05 | Chọn màn trong trình duyệt (mở sẵn 3 Đêm, chọn Đêm 3) | UI smoke | §6 | Đạt (20/20) |
 | DoD | ADR | docs/adr/0001-lantern-fuel-and-dawn-win.md | — | Có |
 | DoD | Changelog breaking changes | CHANGELOG.md | — | Có |
