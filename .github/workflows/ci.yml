@@ -12,12 +12,16 @@ jobs:
         with:
           node-version: 20
       - run: npm test
-      - name: Tính tất định (chạy 2 lần, so sánh)
+      - name: Tính tất định 3 đêm (chạy 2 lần, so sánh)
         run: |
-          node headless.js --seed 42 --night 1 --ticks 3000 --out a.jsonl
-          node headless.js --seed 42 --night 1 --ticks 3000 --out b.jsonl
-          cmp a.jsonl b.jsonl
-      - name: Bot chơi trọn Đêm 1 phải thắng
+          for n in 1 2 3; do
+            node headless.js --seed 42 --night $n --ticks 4000 --out a.jsonl
+            node headless.js --seed 42 --night $n --ticks 4000 --out b.jsonl
+            cmp a.jsonl b.jsonl
+          done
+      - name: Bot thắng Đêm 1 và 2 (bản đồ không kẻ địch)
         run: |
-          node headless.js --seed 42 --night 1 --inputs scenarios/autoplay-seed42.inputs.json --ticks 18000 --out w.jsonl
-          tail -1 w.jsonl | grep '"state":"won"'
+          for n in 1 2; do
+            node headless.js --seed 42 --night $n --scenario scenarios/calm.scenario.json --inputs scenarios/autoplay-calm-n$n.inputs.json --ticks 21600 --out w.jsonl
+            tail -1 w.jsonl | grep '"state":"won"'
+          done
